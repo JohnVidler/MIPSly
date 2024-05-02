@@ -72,7 +72,12 @@ const ioToolbox = {
   "colour": 300,
   "contents": [
     { 'kind': 'block', 'type': 'read' },
-    { 'kind': 'block', 'type': 'write' }
+    { 'kind': 'block', 'type': 'read-batch' },
+    { 'kind': 'block', 'type': 'read-batch-named' },
+
+    { 'kind': 'block', 'type': 'write' },
+    { 'kind': 'block', 'type': 'write-batch' },
+    { 'kind': 'block', 'type': 'write-batch-named' },
   ]
 };
 

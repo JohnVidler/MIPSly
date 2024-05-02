@@ -44,15 +44,30 @@ function unPinRegister( reg ) {
 
 let labelList = [];
 function genLabel() {
-    const label = `_L${labelList.length}`;
+    const label = `L${labelList.length}`;
     labelList.push( label );
     return label;
+}
+
+function genDefineSymbol() {
+    let index = 0;
+    while( Object.keys(defineList).find( v => v == `G${index}` ) )
+        index++;
+    return `G${index}`;
 }
 
 function isAlias( alias ) {
     if( aliasList[alias] )
         return true;
     return false;
+}
+
+function isDefined( name ) {
+    for( let key of Object.keys(defineList) ) {
+        if( defineList[key] == name )
+            return key;
+    }
+    return undefined;
 }
 
 function isPort( input ) {
@@ -75,7 +90,6 @@ function resolveAlias( alias, depth = 0 ) {
     return alias;
 }
 
-
 export const stationeerMIPSGenerator = new Blockly.Generator('stationeersMIPS');
 
 stationeerMIPSGenerator.log = function( line ) {
@@ -96,7 +110,7 @@ stationeerMIPSGenerator.generateFrontMatter = function() {
     if( Object.keys(defineList).length > 0 ) {
         output.push( "\n# DEFINITIONS #" )
         for( const key in defineList )
-            output.push( `define ${key} ${aliasList[key]}` );
+            output.push( `define ${key} ${defineList[key]}` );
     }
 
     if( Object.keys(functionList).length > 0 ) {
@@ -130,7 +144,7 @@ stationeerMIPSGenerator.scrub_ = function( block, code, thisOnly ) {
     const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
     
     if (nextBlock && !thisOnly)
-        return (code + '\n' + stationeerMIPSGenerator.blockToCode(nextBlock)).trim();
+        return (code + '\r\n' + stationeerMIPSGenerator.blockToCode(nextBlock)).trim();
 
     return code.trim();
 };
@@ -151,7 +165,9 @@ stationeerMIPSGenerator.forBlock['function'] = function( block, generator ) {
 
     const code = [
         `${name}:`,
+        'push ra',
         statements,
+        'pop ra',
         'j ra'
     ].join("\n");
 
@@ -499,7 +515,6 @@ stationeerMIPSGenerator.forBlock["read"] = function( block, generator ) {
     const reg = getTempRegister();
     if( reg == undefined )
         return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
-
     pinRegister( reg );
 
     return [
@@ -508,14 +523,64 @@ stationeerMIPSGenerator.forBlock["read"] = function( block, generator ) {
     ];
 }
 
-function loaderShim( input ) {
-    // Is this ACTUALLY code?
-    if( Number.isNaN(Number.parseFloat(input)) && !isRegister(input) && !isPort(input) ) {
-        // Grab the last-pinned reg...
-        const lastReg = pinnedRegisters[pinnedRegisters.length - 1]; //pinnedRegisters.pop();
-        return [ lastReg, input ]
+stationeerMIPSGenerator.forBlock["read-batch"] = function( block, generator ) {
+    const operation = block.getFieldValue( 'OPERATION' );
+    const prop      = block.getFieldValue( 'PROPERTY' );
+    let   hash      = block.getFieldValue( 'HASH' );
+
+    const reg = getTempRegister();
+    if( reg == undefined )
+        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
+    pinRegister( reg );
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${hash}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
     }
-    return [ input, null ]
+    else
+        hash = isDefined( `HASH("${hash}")` ); // Number
+
+    return [
+        `lb ${reg} ${hash} ${prop} ${operation}`,
+        Order.ATOMIC
+    ];
+}
+
+stationeerMIPSGenerator.forBlock["read-batch-named"] = function( block, generator ) {
+    const operation = block.getFieldValue( 'OPERATION' );
+    const prop      = block.getFieldValue( 'PROPERTY' );
+    let   hash      = block.getFieldValue( 'HASH' );
+    let   name      = block.getFieldValue( 'NAME' );
+
+    const reg = getTempRegister();
+    if( reg == undefined )
+        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
+    pinRegister( reg );
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${hash}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = isDefined( `HASH("${hash}")` ); // Number
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${name}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${name}")`;
+        name = symbol;
+    }
+    else
+        name = isDefined( `HASH("${name}")` ); // Number
+
+    return [
+        `lbn ${reg} ${hash} ${name} ${prop} ${operation}`,
+        Order.ATOMIC
+    ];
 }
 
 stationeerMIPSGenerator.forBlock["write"] = function( block, generator ) {
@@ -531,4 +596,74 @@ stationeerMIPSGenerator.forBlock["write"] = function( block, generator ) {
 
     output.push( `s ${port} ${prop} ${readable}` );
     return output.join("\n");
+}
+
+//sb deviceHash logicType r?
+stationeerMIPSGenerator.forBlock["write-batch"] = function( block, generator ) {
+    const output = [];
+
+    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
+    const prop    = block.getFieldValue( 'PROPERTY' );
+    let   hash    = block.getFieldValue( 'HASH' );
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${hash}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = isDefined( `HASH("${hash}")` ); // Number
+
+    const [readable, preamble] = loaderShim( source );
+    if( preamble )
+        output.push( preamble );
+
+    output.push( `sb ${hash} ${prop} ${readable}` );
+    return output.join("\n");
+}
+
+//sbn deviceHash nameHash logicType r?
+stationeerMIPSGenerator.forBlock["write-batch-named"] = function( block, generator ) {
+    const output = [];
+
+    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
+    const prop    = block.getFieldValue( 'PROPERTY' );
+    let   hash    = block.getFieldValue( 'HASH' );
+    let   name    = block.getFieldValue( 'NAME' );
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${hash}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = isDefined( `HASH("${hash}")` ); // Number
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${name}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${name}")`;
+        name = symbol;
+    }
+    else
+        name = isDefined( `HASH("${name}")` ); // Number
+
+    const [readable, preamble] = loaderShim( source );
+    if( preamble )
+        output.push( preamble );
+
+    output.push( `sbn ${hash} ${name} ${prop} ${readable}` );
+    return output.join("\n");
+}
+
+function loaderShim( input ) {
+    // Is this ACTUALLY code?
+    if( Number.isNaN(Number.parseFloat(input)) && !isRegister(input) && !isPort(input) ) {
+        // Grab the last-pinned reg...
+        const lastReg = pinnedRegisters[pinnedRegisters.length - 1]; //pinnedRegisters.pop();
+        return [ lastReg, input ]
+    }
+    return [ input, null ]
 }

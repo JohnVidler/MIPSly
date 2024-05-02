@@ -48,6 +48,13 @@ const OPERATORS = [
     [ "x", "MUL" ]
 ];
 
+const GROUP_OPS = [
+    [ "Average", "0" ],
+    [ "Sum",     "1" ],
+    [ "Minimum", "2" ],
+    [ "Maximum", "3" ],
+];
+
 export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     [
         /*{
@@ -279,8 +286,41 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         },
 
         {
+            "type": "read-batch",
+            "message0": "the %1 %2 from %3",
+            "args0": [
+                {
+                    "type": "field_dropdown",
+                    "name": "OPERATION",
+                    "options": [ ...GROUP_OPS ]
+                },
+                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "HASH", "text": "variable" },
+            ],
+            "output": "Number",
+            "colour": 130,
+        },
+
+        {
+            "type": "read-batch-named",
+            "message0": "the %1 %2 from %3 named %4",
+            "args0": [
+                {
+                    "type": "field_dropdown",
+                    "name": "OPERATION",
+                    "options": [ ...GROUP_OPS ]
+                },
+                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "HASH", "text": "variable" },
+                { "type": "field_input", "name": "NAME", "text": "variable" },
+            ],
+            "output": "Number",
+            "colour": 130,
+        },
+
+        {
             "type": "write",
-            "message0": "set property %1 on port %2 to %3",
+            "message0": "set %1 on port %2 to %3",
             "args0": [
                 { "type": "field_input", "name": "PROPERTY", "text": "variable" },
                 {
@@ -288,6 +328,33 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                     "name": "PORT",
                     "options": [ ...PORTS ]
                 },
+                { "type": "input_value", "name": "SOURCE" },
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": 130,
+        },
+
+        {
+            "type": "write-batch",
+            "message0": "set %1 on %2 to %3",
+            "args0": [
+                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "HASH", "text": "variable" },
+                { "type": "input_value", "name": "SOURCE" },
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": 130,
+        },
+
+        {
+            "type": "write-batch-named",
+            "message0": "set %1 on %2 named %3 to %4",
+            "args0": [
+                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "HASH", "text": "variable" },
+                { "type": "field_input", "name": "NAME", "text": "variable" },
                 { "type": "input_value", "name": "SOURCE" },
             ],
             "previousStatement": null,
