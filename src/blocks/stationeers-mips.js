@@ -98,7 +98,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                 {
                     "type": "field_input",
                     "name": "FUNCTION_NAME",
-                    "text": "NAME"
+                    "text": "example"
                 }
             ],
             "previousStatement": null,
@@ -121,7 +121,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                 {
                     "type": "field_input",
                     "name": "NAME",
-                    "text": "NAME"
+                    "text": "name"
                 },
                 {
                     "type": "field_dropdown",
@@ -252,7 +252,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "set",
             "message0": "set %1 to %2",
             "args0": [
-                { "type": "field_input", "name": "DEST", "text": "variable" },
+                { "type": "field_input", "name": "DEST", "text": "name" },
                 { "type": "input_value", "name": "SOURCE" },
             ],
             "previousStatement": null,
@@ -264,7 +264,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "get",
             "message0": "the value of %1",
             "args0": [
-                { "type": "field_input", "name": "SOURCE", "text": "variable" },
+                { "type": "field_input", "name": "SOURCE", "text": "name" },
             ],
             "output": "Number",
             "colour": 130,
@@ -274,7 +274,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "read",
             "message0": "property %1 from port %2",
             "args0": [
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
                 {
                     "type": "field_dropdown",
                     "name": "PORT",
@@ -294,8 +294,8 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                     "name": "OPERATION",
                     "options": [ ...GROUP_OPS ]
                 },
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
-                { "type": "field_input", "name": "HASH", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
+                { "type": "field_input", "name": "HASH", "text": "device" },
             ],
             "output": "Number",
             "colour": 130,
@@ -310,9 +310,9 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                     "name": "OPERATION",
                     "options": [ ...GROUP_OPS ]
                 },
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
-                { "type": "field_input", "name": "HASH", "text": "variable" },
-                { "type": "field_input", "name": "NAME", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
+                { "type": "field_input", "name": "HASH", "text": "device" },
+                { "type": "field_input", "name": "NAME", "text": "name" },
             ],
             "output": "Number",
             "colour": 130,
@@ -322,7 +322,7 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "write",
             "message0": "set %1 on port %2 to %3",
             "args0": [
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
                 {
                     "type": "field_dropdown",
                     "name": "PORT",
@@ -339,8 +339,8 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "write-batch",
             "message0": "set %1 on %2 to %3",
             "args0": [
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
-                { "type": "field_input", "name": "HASH", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
+                { "type": "field_input", "name": "HASH", "text": "device" },
                 { "type": "input_value", "name": "SOURCE" },
             ],
             "previousStatement": null,
@@ -352,9 +352,9 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "write-batch-named",
             "message0": "set %1 on %2 named %3 to %4",
             "args0": [
-                { "type": "field_input", "name": "PROPERTY", "text": "variable" },
-                { "type": "field_input", "name": "HASH", "text": "variable" },
-                { "type": "field_input", "name": "NAME", "text": "variable" },
+                { "type": "field_input", "name": "PROPERTY", "text": "property" },
+                { "type": "field_input", "name": "HASH", "text": "device" },
+                { "type": "field_input", "name": "NAME", "text": "name" },
                 { "type": "input_value", "name": "SOURCE" },
             ],
             "previousStatement": null,
