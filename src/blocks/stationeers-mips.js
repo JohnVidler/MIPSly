@@ -267,11 +267,19 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "type": "bitwise-ops",
             "message0": "%1 %2 %3",
             "args0": [
-                [ "AND", "and" ],
-                [ "NAND", "nand" ],
-                [ "OR", "or" ],
-                [ "NOR", "nor" ],
-                [ "XOR", "xor" ]
+                { "type": "input_value", "name": "LVALUE" },
+                {
+                    "type": "field_dropdown",
+                    "name": "OPERATOR",
+                    "options": [
+                        [ "AND", "and" ],
+                        [ "NAND", "nand" ],
+                        [ "OR", "or" ],
+                        [ "NOR", "nor" ],
+                        [ "XOR", "xor" ]
+                    ]
+                },
+                { "type": "input_value", "name": "RVALUE" },
             ],
             "inputsInline": true,
             "output": "Number",
