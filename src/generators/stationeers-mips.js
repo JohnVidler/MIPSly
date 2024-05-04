@@ -30,6 +30,7 @@ function pinRegister( reg ) {
     if( pinnedRegisters.includes( reg ) )
         return false
     pinnedRegisters.push( reg );
+
     return true;
 }
 function unPinRegister( reg ) {
@@ -194,12 +195,22 @@ stationeerMIPSGenerator.forBlock['forever'] = function( block, generator ) {
     return output.join( "\n" )
 }
 
-stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
-    const output = [];
-    const falseLabel = genLabel();
-    const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
-    const statements = generator.statementToCode( block, 'MEMBERS' );
+/*stationeerMIPSGenerator.forBlock['yield'] = function( block, generator ) {
+    const SCRATCH_REGS = 6
+    const output = []
 
+    for( let i=0; i<SCRATCH_REGS; i++ )
+        output.push( `push r${i}` );
+
+    // Schedule here...
+
+    for( let i=SCRATCH_REGS-1; i>-1; i-- )
+        output.push( `push r${i}` );
+
+    return output.join('\n');
+}*/
+
+stationeerMIPSGenerator._conditionalShim = function( condition, falseLabel ) {
     // checks here!
     let [readable, preamble] = loaderShim( condition );
     if( preamble ) {
@@ -207,8 +218,9 @@ stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
         const lastLine = preambleLines[preambleLines.length - 1];
 
         // Is this a 'store-compare' line? If so, mangle it into a branch!
-        if( lastLine[0] == 's' ) {
-            let branchLine = `${lastLine}`.split(' ');
+        let branchLine = `${lastLine}`.split(' ');
+        if( ["seq", "sne", "slt", "sle", "sgt", "sge" ].includes(branchLine[0]) ) {
+            
             preambleLines.splice(-1);
 
             // Note - branch logic here is flipped, as we're SKIPPING if these are true.
@@ -234,10 +246,21 @@ stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
             preambleLines.push( `bne ${readable} 1 ${falseLabel}` );
         
         preamble = preambleLines.join("\n");
-        output.push( preamble );
     }
 
-    output.push( statements );
+    return [readable, preamble];
+}
+
+stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
+    const output = [];
+    const falseLabel = genLabel();
+    const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
+
+    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    if( preamble )
+        output.push( preamble );
+
+    output.push( generator.statementToCode( block, 'MEMBERS' ) );
     output.push( `${falseLabel}:` )
     return output.join( "\n" );
 }
@@ -247,52 +270,52 @@ stationeerMIPSGenerator.forBlock['if-else'] = function( block, generator ) {
     const falseLabel = genLabel();
     const skipLabel  = genLabel();
     const condition        = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
-    const true_statements  = generator.statementToCode( block, 'TRUE_MEMBERS' );
-    const false_statements = generator.statementToCode( block, 'FALSE_MEMBERS' );
 
-    // checks here!
-    let [readable, preamble] = loaderShim( condition );
-    if( preamble ) {
-        const preambleLines = preamble.split("\n");
-        const lastLine = preambleLines[preambleLines.length - 1];
-
-        // Is this a 'store-compare' line? If so, mangle it into a branch!
-        if( lastLine[0] == 's' ) {
-            let branchLine = `${lastLine}`.split(' ');
-            preambleLines.splice(-1);
-
-            // Note - branch logic here is flipped, as we're SKIPPING if these are true.
-            // This is an extremely minor optimisation, as it lets us save a label
-            // for the actual if-true branch, and simply fails over the inner code
-            // if required.
-            
-            branchLine[0] = {
-                "seq": "bne",
-                "sne": "beq",
-                "slt": "bge",
-                "sle": "bgt",
-                "sgt": "ble",
-                "sge": "blt"
-            }[branchLine[0]];
-
-            branchLine.splice( 1, 1 );
-            branchLine.push( falseLabel );
-
-            preambleLines.push( branchLine.join(" ") );
-            preamble = preambleLines.join("\n");
-        }
-        else // Implicit 'branch if true'
-            preambleLines.push( `bne ${readable} 1 ${falseLabel}` );
-        
-        preamble = preambleLines.join("\n");
+    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    if( preamble )
         output.push( preamble );
-    }
     
-    output.push( true_statements );
+    output.push( generator.statementToCode( block, 'TRUE_MEMBERS' ) );
     output.push( `j ${skipLabel}` );
     output.push( `${falseLabel}:` );
-    output.push( false_statements );
+    output.push( generator.statementToCode( block, 'FALSE_MEMBERS' ) );
     output.push( `${skipLabel}:` );
+    return output.join( "\n" );
+}
+
+stationeerMIPSGenerator.forBlock['while'] = function( block, generator ) {
+    const output = [];
+    const loopLabel = genLabel();
+    const falseLabel = genLabel();
+    const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
+
+    output.push( `${loopLabel}:` );
+    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    if( preamble )
+        output.push( preamble );
+
+    output.push( generator.statementToCode( block, 'MEMBERS' ) );
+    output.push( `j ${loopLabel}` );
+    output.push( `${falseLabel}:` );
+    return output.join( "\n" );
+}
+
+stationeerMIPSGenerator.forBlock['repeat'] = function( block, generator ) {
+    const output = [];
+    const loopLabel = genLabel();
+    const falseLabel = genLabel();
+    const iterations  = generator.valueToCode( block, "ITERATIONS", Order.ATOMIC );
+
+    let counter = getTempRegister()
+    pinRegister( counter );
+
+    output.push( `move ${counter} ${iterations}` );
+    output.push( `${loopLabel}:` ); 
+    output.push( `beqz ${counter} ${falseLabel}` );
+    output.push( generator.statementToCode( block, 'MEMBERS' ) );
+    output.push( `sub ${counter} ${counter} 1` );
+    output.push( `j ${loopLabel}` );
+    output.push( `${falseLabel}:` );
     return output.join( "\n" );
 }
 
@@ -390,7 +413,56 @@ stationeerMIPSGenerator.forBlock['arithmetic'] = function( block, generator ) {
             break;
         
         default:
-            this._log += `Unknown operator in conditional: ${operator}\n`
+            this._log += `Unknown operator in arithmetic: ${operator}\n`
+    }
+
+    return [ output.join("\n"), Order.ATOMIC ];
+}
+
+stationeerMIPSGenerator.forBlock['bitwise-ops'] = function( block, generator ) {
+    const output = [];
+    const lvalue     = generator.valueToCode( block, "LVALUE", Order.ATOMIC ) || "0";
+    const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
+    const operator   = block.getFieldValue( 'OPERATOR' ) || "and"
+
+    const [lReadable, lPreamble] = loaderShim( lvalue );
+    if( lPreamble )
+        output.push( lPreamble );
+    unPinRegister( lReadable );
+
+    const [rReadable, rPreamble] = loaderShim( rvalue );
+    if( rPreamble )
+        output.push( rPreamble );
+    unPinRegister( rReadable );
+
+    // ... to make room for our own value, if its not already used...
+    const result = getTempRegister();
+    pinRegister( result );
+
+    switch( operator ) {
+        case "and":
+            output.push( `and ${result} ${lReadable} ${rReadable}` );
+            break;
+        
+        case "or":
+            output.push( `or ${result} ${lReadable} ${rReadable}` );
+            break;
+        
+        case "nor":
+            output.push( `nor ${result} ${lReadable} ${rReadable}` );
+            break;
+        
+        case "xor":
+            output.push( `xor ${result} ${lReadable} ${rReadable}` );
+            break;
+        
+        case "nand":
+            output.push( `and ${result} ${lReadable} ${rReadable}` );
+            output.push( `seqz ${result} ${result}` );
+            break;
+        
+        default:
+            this._log += `Unknown operator in bitwise operation: ${operator}\n`
     }
 
     return [ output.join("\n"), Order.ATOMIC ];
@@ -427,6 +499,28 @@ stationeerMIPSGenerator.forBlock['minmax'] = function( block, generator ) {
         
         default:
             this._log += `Unknown operator in conditional: ${operator}\n`
+    }
+
+    return [ output.join("\n"), Order.ATOMIC ];
+}
+
+stationeerMIPSGenerator.forBlock['port-state'] = function( block, generator ) {
+    const output = [];
+
+    const port  = block.getFieldValue( 'PORT' ) || "d0";
+    const state = block.getFieldValue( 'STATE' ) || "connected";
+
+    const result = getTempRegister();
+    pinRegister( result );
+
+    switch( state ) {
+        case "connected":
+            output.push( `sdse ${result} ${port}` );
+            break;
+        
+        case "disconnected":
+            output.push( `sdns ${result} ${port}` );
+            break;
     }
 
     return [ output.join("\n"), Order.ATOMIC ];
@@ -658,11 +752,15 @@ stationeerMIPSGenerator.forBlock["write-batch-named"] = function( block, generat
     return output.join("\n");
 }
 
+stationeerMIPSGenerator.forBlock["color"] = ( block, _ ) => [ `${block.getFieldValue( 'COLOR' )}`, Order.ATOMIC ];
+
 function loaderShim( input ) {
     // Is this ACTUALLY code?
     if( Number.isNaN(Number.parseFloat(input)) && !isRegister(input) && !isPort(input) ) {
         // Grab the last-pinned reg...
         const lastReg = pinnedRegisters[pinnedRegisters.length - 1]; //pinnedRegisters.pop();
+
+        console.log( `code! ${input} -> ${lastReg}` );
         return [ lastReg, input ]
     }
     return [ input, null ]

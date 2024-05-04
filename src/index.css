@@ -7,6 +7,11 @@ pre, code {
     overflow: auto;
 }
 
+.center {
+    margin-left: auto;
+    margin-right: auto;
+}
+
 #pageContainer {
     display: flex;
     width: 100%;
@@ -30,10 +35,13 @@ pre, code {
 }
 
 #generatedCode {
-    height: 50%;
     background-color: rgb(247, 240, 228);
+    padding: 0.5rem;
+    border-left: 3px solid black;
 }
 
 #output {
-    height: 50%;
+    background-color: rgb(247, 240, 228);
+    padding: 0.5rem;
+    border-left: 3px solid black;
 }

@@ -114,6 +114,14 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "colour": 100,
         },
 
+        /*{
+            "type": "yield",
+            "message0": "yield",
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": 100,
+        },*/
+
         {
             "type": "define",
             "message0": "define %1 = %2",
@@ -164,6 +172,32 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                 { "type": "input_statement", "name": "MEMBERS" }
             ],
             "previousStatement": null,
+            "colour": 130,
+        },
+
+        {
+            "type": "while",
+            "message0": "repeat while %1 %2 %3",
+            "args0": [
+                { "type": "input_value", "name": "CONDITION" },
+                { "type": "input_dummy" },
+                { "type": "input_statement", "name": "MEMBERS" }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
+            "colour": 130,
+        },
+
+        {
+            "type": "repeat",
+            "message0": "repeat %1 times %2 %3",
+            "args0": [
+                { "type": "input_value", "name": "ITERATIONS" },
+                { "type": "input_dummy" },
+                { "type": "input_statement", "name": "MEMBERS" }
+            ],
+            "previousStatement": null,
+            "nextStatement": null,
             "colour": 130,
         },
 
@@ -230,6 +264,21 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
         },
 
         {
+            "type": "bitwise-ops",
+            "message0": "%1 %2 %3",
+            "args0": [
+                [ "AND", "and" ],
+                [ "NAND", "nand" ],
+                [ "OR", "or" ],
+                [ "NOR", "nor" ],
+                [ "XOR", "xor" ]
+            ],
+            "inputsInline": true,
+            "output": "Number",
+            "colour": 35,
+        },
+
+        {
             "type": "minmax",
             "message0": "the %1 of %2 and %3",
             "args0": [
@@ -246,6 +295,29 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             ],
             "output": "Number",
             "colour": 35,
+        },
+
+        {
+            "type": "port-state",
+            "message0": "port %1 %2",
+            "args0": [
+                {
+                    "type": "field_dropdown",
+                    "name": "PORT",
+                    "options": [ ...PORTS ]
+                },
+                {
+                    "type": "field_dropdown",
+                    "name": "STATE",
+                    "options": [
+                        [ "connected", "connected" ],
+                        [ "disconnected", "disconnected" ],
+                    ]
+                },
+            ],
+            "inputsInline": true,
+            "output": "Number",
+            "colour": 130,
         },
 
         {
@@ -359,6 +431,33 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             ],
             "previousStatement": null,
             "nextStatement": null,
+            "colour": 130,
+        },
+
+        {
+            "type": "color",
+            "message0": "%1",
+            "args0": [
+                {
+                    "type": "field_dropdown",
+                    "name": "COLOR",
+                    "options": [
+                        [ "Blue", "0" ],
+                        [ "Grey", "1" ],
+                        [ "Green", "2" ],
+                        [ "Orange", "3" ],
+                        [ "Red", "4" ],
+                        [ "Yellow", "5" ],
+                        [ "White", "6" ],
+                        [ "Black", "7" ],
+                        [ "Brown", "8" ],
+                        [ "Khaki", "9" ],
+                        [ "Pink", "10" ],
+                        [ "Purple", "11" ],
+                    ]
+                },
+            ],
+            "output": "Number",
             "colour": 130,
         },
     ]

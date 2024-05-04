@@ -1,16 +1,6 @@
-# Blockly Sample App
+# MIPSly - A Stationeers MIPS Blockly Editor
 
-## Purpose
-
-This app illustrates how to use Blockly together with common programming tools like node/npm, webpack, typescript, eslint, and others. You can use it as the starting point for your own application and modify it as much as you'd like. It contains basic infrastructure for running, building, testing, etc. that you can use even if you don't understand how to configure the related tool yet. When your needs outgrow the functionality provided here, you can replace the provided configuration or tool with your own.
-
-## Quick Start
-
-1. [Install](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) npm if you haven't before.
-2. Run [`npx @blockly/create-package app <application-name>`](https://www.npmjs.com/package/@blockly/create-package) to clone this application to your own machine.
-3. Run `npm install` to install the required dependencies.
-4. Run `npm run start` to run the development server and see the app in action.
-5. If you make any changes to the source code, just refresh the browser while the server is running to see them.
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K8L32E3)
 
 ## Tooling
 

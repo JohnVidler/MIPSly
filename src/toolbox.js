@@ -38,6 +38,7 @@ const basicToolbox = {
       'type': 'logic_boolean',
       "colour": 100
     },
+    { 'kind': 'block', 'type': 'color' },
     { 'kind': 'block', 'type': 'arithmetic' },
     { 'kind': 'block', 'type': 'minmax' },
     { 'kind': 'block', 'type': 'set' },
@@ -50,6 +51,8 @@ const loopsToolbox = {
   "name": "Loops",
   "colour": 200,
   "contents": [
+    { 'kind': 'block', 'type': 'while' },
+    { 'kind': 'block', 'type': 'repeat' },
     { 'kind': 'block', 'type': 'forever' },
   ]
 };
@@ -71,6 +74,8 @@ const ioToolbox = {
   "name": "Input/Output",
   "colour": 300,
   "contents": [
+    { 'kind': 'block', 'type': 'port-state' },
+
     { 'kind': 'block', 'type': 'read' },
     { 'kind': 'block', 'type': 'read-batch' },
     { 'kind': 'block', 'type': 'read-batch-named' },
