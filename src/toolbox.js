@@ -40,6 +40,7 @@ const basicToolbox = {
     },
     { 'kind': 'block', 'type': 'color' },
     { 'kind': 'block', 'type': 'arithmetic' },
+    { 'kind': 'block', 'type': 'bitwise-ops' },
     { 'kind': 'block', 'type': 'minmax' },
     { 'kind': 'block', 'type': 'set' },
     { 'kind': 'block', 'type': 'get' },
