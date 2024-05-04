@@ -2,6 +2,8 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K8L32E3)
 
+Play with it live over at [https://johnvidler.co.uk/mips/](https://johnvidler.co.uk/mips/)
+
 ## Tooling
 
 The application uses many of the same tools that the Blockly team uses to develop Blockly itself. Following is a brief overview, and you can read more about them on our [developer site](https://developers.google.com/blockly/guides/contribute/get-started/development_tools).
