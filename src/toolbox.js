@@ -39,6 +39,7 @@ const basicToolbox = {
       "colour": 100
     },
     { 'kind': 'block', 'type': 'color' },
+    { 'kind': 'block', 'type': 'hash' },
     { 'kind': 'block', 'type': 'arithmetic' },
     { 'kind': 'block', 'type': 'bitwise-ops' },
     { 'kind': 'block', 'type': 'minmax' },

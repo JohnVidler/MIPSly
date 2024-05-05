@@ -114,14 +114,20 @@ stationeerMIPSGenerator.generateFrontMatter = function() {
             output.push( `define ${key} ${defineList[key]}` );
     }
 
+    if( output.length > 0 )
+        output.push( "\n# CODE #\n" );
+
+    return output.join('\n');
+}
+
+stationeerMIPSGenerator.generateBackMatter = function() {
+    output = [];
+
     if( Object.keys(functionList).length > 0 ) {
-        output.push( "\n# FUNCTIONS #" )
+        output.push( "\n\n# FUNCTIONS #" )
         for( const key in functionList )
             output.push( `${functionList[key]}` );
     }
-
-    if( output.length > 0 )
-        output.push( "\n# CODE #\n" );
 
     return output.join('\n');
 }
@@ -701,13 +707,13 @@ stationeerMIPSGenerator.forBlock["write-batch"] = function( block, generator ) {
     let   hash    = block.getFieldValue( 'HASH' );
 
     // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
+    /*if( !isDefined( `HASH("${hash}")` ) ) {
         const symbol = genDefineSymbol();
         defineList[symbol] = `HASH("${hash}")`;
         hash = symbol;
     }
     else
-        hash = isDefined( `HASH("${hash}")` ); // Number
+        hash = isDefined( `HASH("${hash}")` ); // Number*/
 
     const [readable, preamble] = loaderShim( source );
     if( preamble )
@@ -753,6 +759,21 @@ stationeerMIPSGenerator.forBlock["write-batch-named"] = function( block, generat
 }
 
 stationeerMIPSGenerator.forBlock["color"] = ( block, _ ) => [ `${block.getFieldValue( 'COLOR' )}`, Order.ATOMIC ];
+
+stationeerMIPSGenerator.forBlock["hash"] = function( block, _ ) {
+    let hash = block.getFieldValue( 'HASH' );
+
+    // Is this hash not known?
+    if( !isDefined( `HASH("${hash}")` ) ) {
+        const symbol = genDefineSymbol();
+        defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = isDefined( `HASH("${hash}")` ); // Number
+
+    return [ `${hash}`, Order.ATOMIC ];
+}
 
 function loaderShim( input ) {
     // Is this ACTUALLY code?

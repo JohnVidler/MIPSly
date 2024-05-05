@@ -375,7 +375,16 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                     "options": [ ...GROUP_OPS ]
                 },
                 { "type": "field_input", "name": "PROPERTY", "text": "property" },
-                { "type": "field_input", "name": "HASH", "text": "device" },
+                {
+                    "type": "input_value",
+                    "name": "HASH",
+                    "shadow": {  // This is the important bit!
+                        "type": "text",  // The rest is just a normal block definition
+                        "fields": {
+                            "TEXT": "abc"
+                        }
+                    }
+                },
             ],
             "output": "Number",
             "colour": 130,
@@ -464,6 +473,16 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
                         [ "Purple", "11" ],
                     ]
                 },
+            ],
+            "output": "Number",
+            "colour": 130,
+        },
+
+        {
+            "type": "hash",
+            "message0": "the prefab hash for %1",
+            "args0": [
+                { "type": "field_input", "name": "HASH", "text": "device" },
             ],
             "output": "Number",
             "colour": 130,

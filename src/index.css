@@ -12,6 +12,54 @@ pre, code {
     margin-right: auto;
 }
 
+* {
+    font-family: "Noto Sans", sans-serif;
+}
+
+h1, h2, h3, h4 {
+    padding: 0;
+    margin: 0;
+}
+
+h1 {
+    font-size: 150%;
+    line-height: 3rem;
+}
+
+h2, h3, h4 {
+    padding-top: 1rem;
+}
+
+code {
+    font-family: "Noto Sans Mono", monospace;
+}
+
+#headerContainer {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 3px solid lightgray;
+    height: 3rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+ul.navbar {
+    list-style: none;
+}
+
+ul.navbar > li {
+    display: inline-block;
+}
+
+.button {
+    text-decoration: none;
+    border-radius: 0.5rem;
+    background-color: lightblue;
+    padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+    font-weight: bold;
+    color: darkblue;
+}
+
 #pageContainer {
     display: flex;
     width: 100%;

@@ -20,6 +20,7 @@ Blockly.common.defineBlocks(blocks);
 const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output').firstChild;
 const blocklyDiv = document.getElementById('blocklyDiv');
+const ic10emuBtn = document.getElementById('ic10emu-button');
 //const ws = Blockly.inject(blocklyDiv, {toolbox, renderer: 'Zelos'});
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
@@ -31,9 +32,99 @@ const runCode = () => {
   const code = stationeerMIPSGenerator.workspaceToCode(ws);
   codeDiv.innerText = stationeerMIPSGenerator.generateFrontMatter();
   codeDiv.innerText += code;
+  codeDiv.innerText += stationeerMIPSGenerator.generateBackMatter();
 
   outputDiv.innerText = stationeerMIPSGenerator._log;
+
+  ic10encode( codeDiv.innerText );
 };
+
+async function ic10encode( code ) {
+  const ic10context = {
+    "name": "Code from MIPSly",
+    "date": new Date().toISOString(),
+    "session": {
+      "vm": {
+        "ics": [
+            {
+                "device": 1,
+                "id": 2,
+                "registers": Array(18).fill(55),
+                "ip": 0,
+                "ic": 1,
+                "stack": Array(511).fill(0),
+                "aliases": {},
+                "defines": {},
+                "pins": Array(6).fill(null),
+                "state": "Start",
+                "code": code
+            }
+        ],
+        "devices": [
+          {
+            "id": 1,
+            "prefab_name": "StructureCircuitHousing",
+            "slots": [
+              {
+                "typ": "ProgrammableChip",
+                "occupant": { "id": 2, "fields": {} }
+              }
+            ],
+            "connections": [
+              { "CableNetwork": { "net": 1, "typ": "Data" } },
+              { "CableNetwork": { "typ": "Power" } }
+            ],
+            "fields": {}
+          }
+        ],
+        "networks": [
+          {
+            "id": 1,
+            "devices": [ 1 ],
+            "power_only": [],
+            "channels": Array(8).fill(null)
+          }
+        ],
+        "default_network": 1
+      },
+      "activeIC": 1
+    }
+  };
+
+  const compressed = arrayBufferToBase64(await compress(JSON.stringify(ic10context), 'gzip'));
+
+  // Convert and compress for ic10emu :)
+  ic10emuBtn.href="https://ic10emu.dev/#" + compressed;
+}
+
+function arrayBufferToBase64( buffer ) {
+  var binary = '';
+  var bytes = new Uint8Array( buffer );
+  var len = bytes.byteLength;
+  for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode( bytes[ i ] );
+  }
+  return window.btoa( binary );
+}
+
+function compress(string, encoding) {
+  const byteArray = new TextEncoder().encode(string);
+  const cs = new CompressionStream(encoding);
+  const writer = cs.writable.getWriter();
+  writer.write(byteArray);
+  writer.close();
+  return new Response(cs.readable).arrayBuffer();
+}
+
+function decompress(byteArray, encoding) {
+  const cs = new DecompressionStream(encoding);
+  const writer = cs.writable.getWriter();
+  writer.write(byteArray);
+  writer.close();
+  return new Response(cs.readable).arrayBuffer().then(function (arrayBuffer) {
+    return new TextDecoder().decode(arrayBuffer);
+  });
+}
 
 // Load the initial state from storage and run the code.
 load(ws);
