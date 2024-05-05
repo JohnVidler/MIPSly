@@ -23,7 +23,6 @@ h1, h2, h3, h4 {
 
 h1 {
     font-size: 150%;
-    line-height: 3rem;
 }
 
 h2, h3, h4 {
@@ -37,10 +36,16 @@ code {
 #headerContainer {
     display: flex;
     flex-direction: row;
+    justify-content: space-between;
     border-bottom: 3px solid lightgray;
     height: 3rem;
+    line-height: 3rem;
     padding-left: 0.5rem;
     padding-right: 0.5rem;
+}
+
+.light {
+    color:darkgray;
 }
 
 ul.navbar {

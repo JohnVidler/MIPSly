@@ -1,5 +1,16 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { webpack, DefinePlugin } = require('webpack');
+
+let GIT_HASH = require('child_process')
+  .execSync('git rev-parse --short HEAD')
+  .toString()
+  .trim();
+
+let GIT_BRANCH = require('child_process')
+  .execSync('git branch --show-current')
+  .toString()
+  .trim();
 
 // Base config that applies to either development or production mode.
 const config = {
@@ -30,6 +41,10 @@ const config = {
     new HtmlWebpackPlugin({
       template: 'src/index.html',
     }),
+    new DefinePlugin({
+      __GIT_HASH__: JSON.stringify(GIT_HASH),
+      __GIT_BRANCH__: JSON.stringify(GIT_BRANCH),
+    })
   ],
 };
 

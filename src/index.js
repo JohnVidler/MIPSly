@@ -126,6 +126,24 @@ function decompress(byteArray, encoding) {
   });
 }
 
+// Setup any static values in the source... not ideal, but whatever.
+document.getElementById('git-hash').innerText = __GIT_HASH__;
+document.getElementById('git-branch').innerText = __GIT_BRANCH__;
+
+const extra_links = [];
+if( __GIT_BRANCH__ == "dev" ) {
+  extra_links.push( "<a href='https://github.com/JohnVidler/MIPSly/issues' target='_blank'>Bug Tracker</a>" );
+  extra_links.push( " :: " );
+  extra_links.push( "<a href='https://github.com/JohnVidler/MIPSly' target='_blank'>Help With Development</a>" );
+  extra_links.push( " :: " );
+  extra_links.push( "<a href='https://johnvidler.co.uk/mips'>Stable Mode</a>" );
+}
+else {
+  extra_links.push( "<a href='https://johnvidler.github.io/MIPSly/'>Development Mode</a>" );
+}
+document.getElementById('extra').innerHTML = extra_links.join('\n');
+
+
 // Load the initial state from storage and run the code.
 load(ws);
 runCode();
