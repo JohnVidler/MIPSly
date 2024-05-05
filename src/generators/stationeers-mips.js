@@ -98,7 +98,7 @@ stationeerMIPSGenerator.log = function( line ) {
 }
 
 stationeerMIPSGenerator.generateFrontMatter = function() {
-    output = [];
+    const output = [];
 
     if( Object.keys(aliasList).length > 0 && !this.NO_ALIAS ) {
         output.push( "# ALIASES #" )
