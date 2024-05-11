@@ -1,97 +1,17 @@
-/**
- * @license
- * Copyright 2023 Google LLC
- * SPDX-License-Identifier: Apache-2.0
- */
-
-import * as Blockly from 'blockly';
-import {blocks} from './blocks/stationeers-mips';
-import {mipsGenerator} from './generators/stationeers-mips';
-import {ic10encode} from './integrations/ic10emu';
-import {save, load} from './serialization';
-import {toolbox} from './toolbox';
+import React from 'react';
+import ReactDOM from 'react-dom/client';
 import './index.css';
+import App from './App';
+import reportWebVitals from './reportWebVitals';
 
-// New Format Block Components //
-import { ioToolbox } from './blocks/io';
-import { functionToolbox } from './blocks/functions';
-import { soundToolbox } from './blocks/sound';
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
 
-toolbox.contents.push( ioToolbox() );
-toolbox.contents.push( functionToolbox() );
-toolbox.contents.push( soundToolbox() );
-
-// Register the blocks and generator with Blockly
-Blockly.common.defineBlocks(blocks);
-
-// Set up UI elements and inject Blockly
-const codeDiv = document.getElementById('generatedCode').firstChild;
-const outputDiv = document.getElementById('output').firstChild;
-const blocklyDiv = document.getElementById('blocklyDiv');
-const ic10emuBtn = document.getElementById('ic10emu-button');
-//const ws = Blockly.inject(blocklyDiv, {toolbox, renderer: 'Zelos'});
-const ws = Blockly.inject(blocklyDiv, {toolbox});
-
-
-// This function resets the code and output divs, shows the
-// generated code from the workspace, and evals the code.
-const runCode = () => {
-  mipsGenerator.reset();
-  const code = mipsGenerator.workspaceToCode(ws);
-  codeDiv.innerText = mipsGenerator.generateFrontMatter();
-  codeDiv.innerText += code;
-  codeDiv.innerText += mipsGenerator.generateBackMatter();
-
-  outputDiv.innerText = mipsGenerator._log;
-
-  ic10encode( codeDiv.innerText, ic10emuBtn );
-};
-
-
-
-// Setup any static values in the source... not ideal, but whatever.
-document.getElementById('git-hash').innerText = __GIT_HASH__;
-document.getElementById('git-branch').innerText = __GIT_BRANCH__;
-
-const extra_links = [];
-if( __GIT_BRANCH__ == "dev" ) {
-  extra_links.push( "<a href='https://github.com/JohnVidler/MIPSly/issues' target='_blank'>Bug Tracker</a>" );
-  extra_links.push( " :: " );
-  extra_links.push( "<a href='https://github.com/JohnVidler/MIPSly' target='_blank'>Help With Development</a>" );
-  extra_links.push( " :: " );
-  extra_links.push( "<a href='https://johnvidler.co.uk/mips'>Stable Mode</a>" );
-}
-else {
-  extra_links.push( "<a href='https://johnvidler.github.io/MIPSly/'>Development Mode</a>" );
-}
-document.getElementById('extra').innerHTML = extra_links.join('\n');
-
-
-// Load the initial state from storage and run the code.
-try {
-  load(ws);
-} catch ( err ) {
-  console.log( "Failed to load existing code... sorry :(" );
-}
-runCode();
-
-// Every time the workspace changes state, save the changes to storage.
-ws.addChangeListener((e) => {
-  // UI events are things like scrolling, zooming, etc.
-  // No need to save after one of these.
-  if (e.isUiEvent) return;
-  save(ws);
-});
-
-
-// Whenever the workspace changes meaningfully, run the code again.
-ws.addChangeListener((e) => {
-  // Don't run the code when the workspace finishes loading; we're
-  // already running it once when the application starts.
-  // Don't run the code during drags; we might have invalid state.
-  if (e.isUiEvent || e.type == Blockly.Events.FINISHED_LOADING ||
-    ws.isDragging()) {
-    return;
-  }
-  runCode();
-});
+// If you want to start measuring performance in your app, pass a function
+// to log results (for example: reportWebVitals(console.log))
+// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
+reportWebVitals();

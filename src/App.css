@@ -1,0 +1,106 @@
+.asdasdpp-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+pre, code {
+  overflow: auto;
+}
+
+.center {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+* {
+  font-family: "Noto Sans", sans-serif;
+}
+
+h1, h2, h3, h4 {
+  padding: 0;
+  margin: 0;
+}
+
+h1 {
+  font-size: 150%;
+}
+
+h2, h3, h4 {
+  padding-top: 1rem;
+}
+
+code {
+  font-family: "Noto Sans Mono", monospace;
+}
+
+#headerContainer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  border-bottom: 3px solid lightgray;
+  height: 3rem;
+  line-height: 3rem;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+}
+
+.light {
+  color:darkgray;
+}
+
+ul.navbar {
+  list-style: none;
+}
+
+ul.navbar > li {
+  display: inline-block;
+}
+
+.button {
+  text-decoration: none;
+  border-radius: 0.5rem;
+  background-color: lightblue;
+  padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+  font-weight: bold;
+  color: darkblue;
+}
+
+#pageContainer {
+  display: flex;
+  width: 100%;
+  max-width: 100vw;
+  height: 100vh;
+}
+
+.blocklyDiv {
+  flex-basis: 100%;
+  height: 100%;
+  min-width: 600px;
+}
+
+#outputPane {
+  display: flex;
+  flex-direction: column;
+  width: 400px;
+  flex: 0 0 400px;
+  overflow: auto;
+  margin: 1rem;
+}
+
+#generatedCode {
+  background-color: rgb(247, 240, 228);
+  padding: 0.5rem;
+  border-left: 3px solid black;
+}
+
+#output {
+  background-color: rgb(247, 240, 228);
+  padding: 0.5rem;
+  border-left: 3px solid black;
+}
