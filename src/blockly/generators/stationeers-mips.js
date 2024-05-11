@@ -294,7 +294,7 @@ mipsGenerator.forBlock['if'] = function( block, generator ) {
     const falseLabel = genLabel();
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
 
@@ -309,7 +309,7 @@ mipsGenerator.forBlock['if-else'] = function( block, generator ) {
     const skipLabel  = genLabel();
     const condition        = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
     
@@ -328,7 +328,7 @@ mipsGenerator.forBlock['while'] = function( block, generator ) {
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
     output.push( `${loopLabel}:` );
-    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
 
