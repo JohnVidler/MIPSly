@@ -1,5 +1,5 @@
 import * as Blockly from 'blockly';
-import { LOGIC_COMPONENTS, getPrefabIndex } from '../stationpedia';
+import { LOGIC_COMPONENTS } from '../stationpedia';
 
 export const Order = {
     ATOMIC: 0
@@ -60,7 +60,7 @@ function genLabel() {
 
 function genDefineSymbol() {
     let index = 0;
-    while( Object.keys(defineList).find( v => v == `G${index}` ) )
+    while( Object.keys(defineList).find( v => v === `G${index}` ) )
         index++;
     return `G${index}`;
 }
@@ -73,7 +73,7 @@ function isAlias( alias ) {
 
 function isDefined( name ) {
     for( let key of Object.keys(defineList) ) {
-        if( defineList[key] == name )
+        if( defineList[key] === name )
             return key;
     }
     return undefined;
@@ -129,7 +129,7 @@ mipsGenerator.generateFrontMatter = function() {
 }
 
 mipsGenerator.generateBackMatter = function() {
-    output = [];
+    const output = [];
 
     if( Object.keys(functionList).length > 0 ) {
         output.push( "\n\n# FUNCTIONS #" )
@@ -173,7 +173,7 @@ mipsGenerator.serialiseCode = function( code ) {
 
 mipsGenerator.scrub_ = function( block, code, thisOnly ) {
     const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
-    const prevBlock = block.previousConnection && block.previousConnection.targetBlock();
+    //const prevBlock = block.previousConnection && block.previousConnection.targetBlock();
     const outputConnection = block.outputConnection && block.outputConnection.targetBlock();
 
     if( !outputConnection )
@@ -559,6 +559,9 @@ mipsGenerator.forBlock['port-state'] = function( block, generator ) {
         case "disconnected":
             output.push( `sdns ${result} ${port}` );
             break;
+
+        default:
+            output.push( `#!! Unknown state: ${state} !!#` )
     }
 
     return [ output.join("\n"), Order.ATOMIC ];
@@ -569,7 +572,7 @@ mipsGenerator.forBlock['set'] = function( block, generator ) {
     let dest  = block.getFieldValue( "DEST" );
     const source  = generator.valueToCode( block, "SOURCE", Order.ATOMIC ) || "0";
 
-    const predefined = isAlias( dest );
+    isAlias( dest );
     dest = resolveAlias( dest );
 
     const [readable, preamble] = loaderShim( source );
@@ -581,7 +584,7 @@ mipsGenerator.forBlock['set'] = function( block, generator ) {
     // Is this a literal register?
     if( REGISTERS.indexOf(dest) > -1 ) {
         pinRegister( dest );
-        if( dest != readable )
+        if( dest !== readable )
             output.push( `move ${dest} ${readable}` )
         return output.join('\n');
     }
@@ -596,7 +599,7 @@ mipsGenerator.forBlock['set'] = function( block, generator ) {
     pinRegister( reg );
 
     aliasList[ dest ] = reg;
-    if( reg != readable )
+    if( reg !== readable )
         output.push( `move ${reg} ${readable}` )
     return output.join('\n');
 }
@@ -645,7 +648,7 @@ mipsGenerator.forBlock["read"] = function( block, generator ) {
     const port = block.getFieldValue( 'PORT' );
 
     const reg = getTempRegister();
-    if( reg == undefined )
+    if( reg === undefined )
         return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
     pinRegister( reg );
 
@@ -661,7 +664,7 @@ mipsGenerator.forBlock["read-batch"] = function( block, generator ) {
     let   hash      = block.getFieldValue( 'HASH' );
 
     const reg = getTempRegister();
-    if( reg == undefined )
+    if( reg === undefined )
         return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
     pinRegister( reg );
 
@@ -687,7 +690,7 @@ mipsGenerator.forBlock["read-batch-named"] = function( block, generator ) {
     let   name      = block.getFieldValue( 'NAME' );
 
     const reg = getTempRegister();
-    if( reg == undefined )
+    if( reg === undefined )
         return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
     pinRegister( reg );
 

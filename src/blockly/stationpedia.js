@@ -1,4 +1,5 @@
 import unity_data from './data/Stationpedia.json';
+import tag_data from './data/Tags.json';
 
 const TAG_REGEX = /\<[^\>]+\>/gi;
 
@@ -26,6 +27,7 @@ for( let page of unity_data.pages ) {
             "logic": {},
             "logicSlots": {},
             "slots": {},
+            "tags": tag_data[page.PrefabName] || []
         };
     }
 
