@@ -1,9 +1,11 @@
 'use client';
 
-//import { useState } from 'react';
+import { useState } from 'react';
 import * as Blockly from 'blockly';
 import { BlocklyWorkspace } from 'react-blockly';
+import { IC10Configurator } from './IC10Configurator';
 import { save, load } from '../blockly/serialization';
+import { ic10encode } from '../blockly/integrations/ic10emu';
 import { blocks } from '../blockly/blocks/stationeers-mips';
 import { mipsGenerator } from '../blockly/generators/stationeers-mips';
 import { toolbox } from '../blockly/toolbox';
@@ -13,6 +15,7 @@ import { ioToolbox } from '../blockly/blocks/io';
 import { functionToolbox } from '../blockly/blocks/functions';
 import { soundToolbox } from '../blockly/blocks/sound';
 
+
 toolbox.contents.push( ioToolbox() );
 toolbox.contents.push( functionToolbox() );
 toolbox.contents.push( soundToolbox() );
@@ -21,24 +24,21 @@ toolbox.contents.push( soundToolbox() );
 Blockly.common.defineBlocks(blocks);
 
 export function BlocklyEditor() {
-    //const [xml, setXml] = useState();
-
-    const codeDiv = document.getElementById('generatedCode').firstChild;
-    const outputDiv = document.getElementById('output').firstChild;
+    const [getCode,  setCode]     = useState();
+    const [getLog,   setLog]      = useState();
+    const [ic10Link, setIC10Link] = useState();
 
     function runCode( workspace ) {
-        console.log( "Running code!" );
         mipsGenerator.reset();
         const code = mipsGenerator.workspaceToCode(workspace);
-        codeDiv.innerText = mipsGenerator.generateFrontMatter();
-        codeDiv.innerText += code;
-        codeDiv.innerText += mipsGenerator.generateBackMatter();
+        const frontMatter = mipsGenerator.generateFrontMatter();
+        const backMatter = mipsGenerator.generateBackMatter();
 
-        outputDiv.innerText = mipsGenerator._log;
+        const finalCode = [frontMatter, code, backMatter].join('\n');
 
-        console.log( code );
-
-        //ic10encode( codeDiv.innerText, ic10emuBtn );
+        setCode( finalCode );
+        setLog( mipsGenerator._log );
+        ic10encode( finalCode, setIC10Link );
     };
 
     function onInject( workspace ) {
@@ -61,11 +61,24 @@ export function BlocklyEditor() {
     }
 
     return (
-        <BlocklyWorkspace
-            className="blocklyDiv" // you can use whatever classes are appropriate for your app's CSS
-            toolboxConfiguration={toolbox} // this must be a JSON toolbox definition
-            onWorkspaceChange={onChange}
-            onInject={onInject}
-        />
+        <div id="pageContainer">
+            <div id="outputPane">
+                <IC10Configurator />
+                <h3>Generated Code</h3>
+                <pre id="generatedCode"><code>{getCode}</code></pre>
+                <div className="center">
+                    <a className="button" id="ic10emu-button" href={ic10Link} target="_blank">Open in ic10emu.dev!</a>
+                </div>
+
+                <h3>Extra Build Information</h3>
+                <div id="output"><code>{getLog}</code></div>
+            </div>
+            <BlocklyWorkspace
+                className="blocklyDiv" // you can use whatever classes are appropriate for your app's CSS
+                toolboxConfiguration={toolbox} // this must be a JSON toolbox definition
+                onWorkspaceChange={onChange}
+                onInject={onInject}
+            />
+        </div>
     );
 }

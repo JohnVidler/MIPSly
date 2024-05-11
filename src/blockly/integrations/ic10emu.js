@@ -1,4 +1,4 @@
-export async function ic10encode( code, ic10emuBtn ) {
+export async function ic10encode( code, target ) {
     const ic10context = {
         "vm": {
             "ics": [
@@ -51,7 +51,7 @@ export async function ic10encode( code, ic10emuBtn ) {
     const compressed = arrayBufferToBase64(await compress(JSON.stringify(ic10context, replacer), 'gzip'));
 
     // Convert and compress for ic10emu :)
-    ic10emuBtn.href="https://ic10emu.dev/#" + compressed;
+    target( "https://ic10emu.dev/#" + compressed );
 }
 
 function arrayBufferToBase64( buffer ) {
