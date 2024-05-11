@@ -1,13 +1,3 @@
-const functionToolbox = {
-  "kind": "category",
-  "name": "Functions",
-  "colour": 50,
-  "contents": [
-    { 'kind': 'block', 'type': 'function' },
-    { 'kind': 'block', 'type': 'call' },
-  ]
-};
-
 const internalsToolbox = {
   "kind": "category",
   "name": "Other",
@@ -71,23 +61,6 @@ const logicToolbox = {
   ]
 };
 
-const ioToolbox = {
-  "kind": "category",
-  "name": "Input/Output",
-  "colour": 300,
-  "contents": [
-    { 'kind': 'block', 'type': 'port-state' },
-
-    { 'kind': 'block', 'type': 'read' },
-    { 'kind': 'block', 'type': 'read-batch' },
-    { 'kind': 'block', 'type': 'read-batch-named' },
-
-    { 'kind': 'block', 'type': 'write' },
-    { 'kind': 'block', 'type': 'write-batch' },
-    { 'kind': 'block', 'type': 'write-batch-named' },
-  ]
-};
-
 export const toolbox = {
   'kind': 'categoryToolbox',
   'contents': [
@@ -104,7 +77,5 @@ export const toolbox = {
     loopsToolbox,
     logicToolbox,
     internalsToolbox,
-    ioToolbox,
-    functionToolbox,
   ]
 }

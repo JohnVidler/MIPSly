@@ -1,5 +1,7 @@
 import * as Blockly from 'blockly';
+import { getPrefabIndex } from '../stationpedia';
 
+// Deprecated, use ic10.js -> REGISTERS
 const REGISTERS = [
     [ "r0", "r0" ],
     [ "r1", "r1" ],
@@ -21,6 +23,7 @@ const REGISTERS = [
     [ "sp", "sp" ],
 ];
 
+// Deprecated, use ic10.js -> PORTS
 const PORTS = [
     [ "d0", "d0" ],
     [ "d1", "d1" ],
@@ -429,7 +432,11 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             "message0": "set %1 on %2 to %3",
             "args0": [
                 { "type": "field_input", "name": "PROPERTY", "text": "property" },
-                { "type": "field_input", "name": "HASH", "text": "device" },
+                {
+                    "type": "field_dropdown",
+                    "name": "HASH",
+                    "options": getPrefabIndex().filter( v => v[1].startsWith("Structure") )
+                },
                 { "type": "input_value", "name": "SOURCE" },
             ],
             "previousStatement": null,

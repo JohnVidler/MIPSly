@@ -1,7 +1,15 @@
 import * as Blockly from 'blockly';
+import { LOGIC_COMPONENTS, getPrefabIndex } from '../stationpedia';
 
-const Order = {
+export const Order = {
     ATOMIC: 0
+};
+
+export const Type = {
+    Number: "Number",
+    Boolean: "Boolean",
+    PortAction: "PORT_ACTION",
+    Sound: "ENUM_SOUND"
 };
 
 const REGISTERS = [
@@ -91,13 +99,13 @@ function resolveAlias( alias, depth = 0 ) {
     return alias;
 }
 
-export const stationeerMIPSGenerator = new Blockly.Generator('stationeersMIPS');
+export const mipsGenerator = new Blockly.Generator('stationeersMIPS');
 
-stationeerMIPSGenerator.log = function( line ) {
+mipsGenerator.log = function( line ) {
     this._log += line + "\n";
 }
 
-stationeerMIPSGenerator.generateFrontMatter = function() {
+mipsGenerator.generateFrontMatter = function() {
     const output = [];
 
     if( Object.keys(aliasList).length > 0 && !this.NO_ALIAS ) {
@@ -120,7 +128,7 @@ stationeerMIPSGenerator.generateFrontMatter = function() {
     return output.join('\n');
 }
 
-stationeerMIPSGenerator.generateBackMatter = function() {
+mipsGenerator.generateBackMatter = function() {
     output = [];
 
     if( Object.keys(functionList).length > 0 ) {
@@ -132,7 +140,7 @@ stationeerMIPSGenerator.generateBackMatter = function() {
     return output.join('\n');
 }
 
-stationeerMIPSGenerator.reset = function() {
+mipsGenerator.reset = function() {
     // Reset the generator entirely
 
     this.INDENT = "";
@@ -147,16 +155,40 @@ stationeerMIPSGenerator.reset = function() {
     labelList = [];
 }
 
-stationeerMIPSGenerator.scrub_ = function( block, code, thisOnly ) {
-    const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
-    
-    if (nextBlock && !thisOnly)
-        return (code + '\r\n' + stationeerMIPSGenerator.blockToCode(nextBlock)).trim();
+mipsGenerator.serialiseCode = function( code ) {
+    console.log( typeof code );
 
-    return code.trim();
+    if( typeof code == "object" ) {
+        if( Array.isArray(code) )
+            return code.join( '\n' )
+
+        return `# Raw Context: ${JSON.stringify(code)} #`;
+    }
+
+    if( typeof code == "boolean" )
+        return code?'1':'0';
+
+    return `${code}`;
+}
+
+mipsGenerator.scrub_ = function( block, code, thisOnly ) {
+    const nextBlock = block.nextConnection && block.nextConnection.targetBlock();
+    const prevBlock = block.previousConnection && block.previousConnection.targetBlock();
+    const outputConnection = block.outputConnection && block.outputConnection.targetBlock();
+
+    if( !outputConnection )
+        code = this.serialiseCode( code );
+
+    if (nextBlock && !thisOnly)
+        return [
+            code,
+            this.serialiseCode( mipsGenerator.blockToCode( nextBlock ) )
+        ].join( '\n' );
+
+    return code;
 };
 
-stationeerMIPSGenerator.forBlock['define'] = function( block, generator ) {
+mipsGenerator.forBlock['define'] = function( block, generator ) {
     const name = block.getFieldValue( "NAME" ) || "??";
     const port = block.getFieldValue( "PORT" ) || "??";
 
@@ -166,7 +198,7 @@ stationeerMIPSGenerator.forBlock['define'] = function( block, generator ) {
     return "";
 }
 
-stationeerMIPSGenerator.forBlock['function'] = function( block, generator ) {
+mipsGenerator.forBlock['function'] = function( block, generator ) {
     const name = block.getFieldValue( 'FUNCTION_NAME' ) || "function";
     const statements = generator.statementToCode( block, 'MEMBERS' );
 
@@ -184,12 +216,12 @@ stationeerMIPSGenerator.forBlock['function'] = function( block, generator ) {
     return null;
 }
 
-stationeerMIPSGenerator.forBlock['call'] = function( block, generator ) {
+mipsGenerator.forBlock['call'] = function( block, generator ) {
     const name = block.getFieldValue( 'FUNCTION_NAME' ) || "function"
     return `jal ${name}`;
 }
 
-stationeerMIPSGenerator.forBlock['forever'] = function( block, generator ) {
+mipsGenerator.forBlock['forever'] = function( block, generator ) {
     const output = [];
     const label = genLabel();
     const statements = generator.statementToCode( block, 'MEMBERS' );
@@ -201,7 +233,7 @@ stationeerMIPSGenerator.forBlock['forever'] = function( block, generator ) {
     return output.join( "\n" )
 }
 
-/*stationeerMIPSGenerator.forBlock['yield'] = function( block, generator ) {
+/*mipsGenerator.forBlock['yield'] = function( block, generator ) {
     const SCRATCH_REGS = 6
     const output = []
 
@@ -216,7 +248,7 @@ stationeerMIPSGenerator.forBlock['forever'] = function( block, generator ) {
     return output.join('\n');
 }*/
 
-stationeerMIPSGenerator._conditionalShim = function( condition, falseLabel ) {
+mipsGenerator._conditionalShim = function( condition, falseLabel ) {
     // checks here!
     let [readable, preamble] = loaderShim( condition );
     if( preamble ) {
@@ -257,12 +289,12 @@ stationeerMIPSGenerator._conditionalShim = function( condition, falseLabel ) {
     return [readable, preamble];
 }
 
-stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
+mipsGenerator.forBlock['if'] = function( block, generator ) {
     const output = [];
     const falseLabel = genLabel();
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
 
@@ -271,13 +303,13 @@ stationeerMIPSGenerator.forBlock['if'] = function( block, generator ) {
     return output.join( "\n" );
 }
 
-stationeerMIPSGenerator.forBlock['if-else'] = function( block, generator ) {
+mipsGenerator.forBlock['if-else'] = function( block, generator ) {
     const output = [];
     const falseLabel = genLabel();
     const skipLabel  = genLabel();
     const condition        = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
     
@@ -289,14 +321,14 @@ stationeerMIPSGenerator.forBlock['if-else'] = function( block, generator ) {
     return output.join( "\n" );
 }
 
-stationeerMIPSGenerator.forBlock['while'] = function( block, generator ) {
+mipsGenerator.forBlock['while'] = function( block, generator ) {
     const output = [];
     const loopLabel = genLabel();
     const falseLabel = genLabel();
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
     output.push( `${loopLabel}:` );
-    const [readable, preamble] = stationeerMIPSGenerator._conditionalShim( condition, falseLabel )
+    const [readable, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
     if( preamble )
         output.push( preamble );
 
@@ -306,7 +338,7 @@ stationeerMIPSGenerator.forBlock['while'] = function( block, generator ) {
     return output.join( "\n" );
 }
 
-stationeerMIPSGenerator.forBlock['repeat'] = function( block, generator ) {
+mipsGenerator.forBlock['repeat'] = function( block, generator ) {
     const output = [];
     const loopLabel = genLabel();
     const falseLabel = genLabel();
@@ -325,7 +357,7 @@ stationeerMIPSGenerator.forBlock['repeat'] = function( block, generator ) {
     return output.join( "\n" );
 }
 
-stationeerMIPSGenerator.forBlock['condition'] = function( block, generator ) {
+mipsGenerator.forBlock['condition'] = function( block, generator ) {
     const output = [];
     const lvalue     = generator.valueToCode( block, "LVALUE", Order.ATOMIC ) || "0";
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
@@ -377,7 +409,7 @@ stationeerMIPSGenerator.forBlock['condition'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['arithmetic'] = function( block, generator ) {
+mipsGenerator.forBlock['arithmetic'] = function( block, generator ) {
     const output = [];
     const lvalue     = generator.valueToCode( block, "LVALUE", Order.ATOMIC ) || "0";
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
@@ -425,7 +457,7 @@ stationeerMIPSGenerator.forBlock['arithmetic'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['bitwise-ops'] = function( block, generator ) {
+mipsGenerator.forBlock['bitwise-ops'] = function( block, generator ) {
     const output = [];
     const lvalue     = generator.valueToCode( block, "LVALUE", Order.ATOMIC ) || "0";
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
@@ -474,7 +506,7 @@ stationeerMIPSGenerator.forBlock['bitwise-ops'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['minmax'] = function( block, generator ) {
+mipsGenerator.forBlock['minmax'] = function( block, generator ) {
     const output = [];
     const lvalue     = generator.valueToCode( block, "LVALUE", Order.ATOMIC ) || "0";
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
@@ -510,7 +542,7 @@ stationeerMIPSGenerator.forBlock['minmax'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['port-state'] = function( block, generator ) {
+mipsGenerator.forBlock['port-state'] = function( block, generator ) {
     const output = [];
 
     const port  = block.getFieldValue( 'PORT' ) || "d0";
@@ -532,7 +564,7 @@ stationeerMIPSGenerator.forBlock['port-state'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['set'] = function( block, generator ) {
+mipsGenerator.forBlock['set'] = function( block, generator ) {
     const output = [];
     let dest  = block.getFieldValue( "DEST" );
     const source  = generator.valueToCode( block, "SOURCE", Order.ATOMIC ) || "0";
@@ -569,7 +601,7 @@ stationeerMIPSGenerator.forBlock['set'] = function( block, generator ) {
     return output.join('\n');
 }
 
-stationeerMIPSGenerator.forBlock['get'] = function( block, generator ) {
+mipsGenerator.forBlock['get'] = function( block, generator ) {
     let source = block.getFieldValue( "SOURCE" );
 
     //const predefined = isAlias( source );
@@ -578,8 +610,8 @@ stationeerMIPSGenerator.forBlock['get'] = function( block, generator ) {
     return [ source, Order.ATOMIC ];
 }
 
-stationeerMIPSGenerator.forBlock['wait'] = () => "yield";
-stationeerMIPSGenerator.forBlock['sleep'] = function ( block, generator ) {
+mipsGenerator.forBlock['wait'] = () => "yield";
+mipsGenerator.forBlock['sleep'] = function ( block, generator ) {
     const output = []
     let time = generator.valueToCode( block, "TIME", Order.ATOMIC ) || "1";
 
@@ -592,23 +624,23 @@ stationeerMIPSGenerator.forBlock['sleep'] = function ( block, generator ) {
 
     return output.join("\n")
 }
-stationeerMIPSGenerator.forBlock['explode'] = () => "hcf # Boom :)";
+mipsGenerator.forBlock['explode'] = () => "hcf # Boom :)";
 
-stationeerMIPSGenerator.forBlock["math_number"] = function( block, generator ) {
+mipsGenerator.forBlock["math_number"] = function( block, generator ) {
     return [
         `${block.getFieldValue( 'NUM' )}`,
         Order.ATOMIC
     ];
 }
 
-stationeerMIPSGenerator.forBlock["logic_boolean"] = function( block, generator ) {
+mipsGenerator.forBlock["logic_boolean"] = function( block, generator ) {
     return [
         block.getFieldValue( 'BOOL' ) === "TRUE" ? '1' : '0',
         Order.ATOMIC
     ];
 }
 
-stationeerMIPSGenerator.forBlock["read"] = function( block, generator ) {
+mipsGenerator.forBlock["read"] = function( block, generator ) {
     const prop = block.getFieldValue( 'PROPERTY' );
     const port = block.getFieldValue( 'PORT' );
 
@@ -623,7 +655,7 @@ stationeerMIPSGenerator.forBlock["read"] = function( block, generator ) {
     ];
 }
 
-stationeerMIPSGenerator.forBlock["read-batch"] = function( block, generator ) {
+mipsGenerator.forBlock["read-batch"] = function( block, generator ) {
     const operation = block.getFieldValue( 'OPERATION' );
     const prop      = block.getFieldValue( 'PROPERTY' );
     let   hash      = block.getFieldValue( 'HASH' );
@@ -648,7 +680,7 @@ stationeerMIPSGenerator.forBlock["read-batch"] = function( block, generator ) {
     ];
 }
 
-stationeerMIPSGenerator.forBlock["read-batch-named"] = function( block, generator ) {
+mipsGenerator.forBlock["read-batch-named"] = function( block, generator ) {
     const operation = block.getFieldValue( 'OPERATION' );
     const prop      = block.getFieldValue( 'PROPERTY' );
     let   hash      = block.getFieldValue( 'HASH' );
@@ -683,7 +715,7 @@ stationeerMIPSGenerator.forBlock["read-batch-named"] = function( block, generato
     ];
 }
 
-stationeerMIPSGenerator.forBlock["write"] = function( block, generator ) {
+mipsGenerator.forBlock["write"] = function( block, generator ) {
     const output = [];
 
     const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
@@ -699,21 +731,25 @@ stationeerMIPSGenerator.forBlock["write"] = function( block, generator ) {
 }
 
 //sb deviceHash logicType r?
-stationeerMIPSGenerator.forBlock["write-batch"] = function( block, generator ) {
+mipsGenerator.forBlock["write-batch"] = function( block, generator ) {
     const output = [];
 
     const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
     const prop    = block.getFieldValue( 'PROPERTY' );
     let   hash    = block.getFieldValue( 'HASH' );
-
+    
     // Is this hash not known?
-    /*if( !isDefined( `HASH("${hash}")` ) ) {
+    if( !isDefined( `HASH("${hash}")` ) ) {
+
+        if( !Object.keys(LOGIC_COMPONENTS).includes( hash ) )
+            output.push( "# Warn: Unknown prefab name" );
+
         const symbol = genDefineSymbol();
         defineList[symbol] = `HASH("${hash}")`;
         hash = symbol;
     }
     else
-        hash = isDefined( `HASH("${hash}")` ); // Number*/
+        hash = isDefined( `HASH("${hash}")` ); // Number
 
     const [readable, preamble] = loaderShim( source );
     if( preamble )
@@ -724,7 +760,7 @@ stationeerMIPSGenerator.forBlock["write-batch"] = function( block, generator ) {
 }
 
 //sbn deviceHash nameHash logicType r?
-stationeerMIPSGenerator.forBlock["write-batch-named"] = function( block, generator ) {
+mipsGenerator.forBlock["write-batch-named"] = function( block, generator ) {
     const output = [];
 
     const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
@@ -758,9 +794,9 @@ stationeerMIPSGenerator.forBlock["write-batch-named"] = function( block, generat
     return output.join("\n");
 }
 
-stationeerMIPSGenerator.forBlock["color"] = ( block, _ ) => [ `${block.getFieldValue( 'COLOR' )}`, Order.ATOMIC ];
+mipsGenerator.forBlock["color"] = ( block, _ ) => [ `${block.getFieldValue( 'COLOR' )}`, Order.ATOMIC ];
 
-stationeerMIPSGenerator.forBlock["hash"] = function( block, _ ) {
+mipsGenerator.forBlock["hash"] = function( block, _ ) {
     let hash = block.getFieldValue( 'HASH' );
 
     // Is this hash not known?
@@ -785,4 +821,9 @@ function loaderShim( input ) {
         return [ lastReg, input ]
     }
     return [ input, null ]
+}
+
+
+mipsGenerator.forBlock['dummy'] = function( block, generator ) {
+    return "# dummy #";
 }

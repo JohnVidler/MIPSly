@@ -6,16 +6,23 @@
 
 import * as Blockly from 'blockly';
 import {blocks} from './blocks/stationeers-mips';
-import {stationeerMIPSGenerator} from './generators/stationeers-mips';
+import {mipsGenerator} from './generators/stationeers-mips';
 import {ic10encode} from './integrations/ic10emu';
 import {save, load} from './serialization';
 import {toolbox} from './toolbox';
 import './index.css';
 
+// New Format Block Components //
+import { ioToolbox } from './blocks/io';
+import { functionToolbox } from './blocks/functions';
+import { soundToolbox } from './blocks/sound';
+
+toolbox.contents.push( ioToolbox() );
+toolbox.contents.push( functionToolbox() );
+toolbox.contents.push( soundToolbox() );
+
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
-//Object.assign(stationeerMIPSGenerator.forBlock, forBlock);
-//Object.assign(stationeerMIPSGenerator.define, )
 
 // Set up UI elements and inject Blockly
 const codeDiv = document.getElementById('generatedCode').firstChild;
@@ -25,16 +32,17 @@ const ic10emuBtn = document.getElementById('ic10emu-button');
 //const ws = Blockly.inject(blocklyDiv, {toolbox, renderer: 'Zelos'});
 const ws = Blockly.inject(blocklyDiv, {toolbox});
 
+
 // This function resets the code and output divs, shows the
 // generated code from the workspace, and evals the code.
 const runCode = () => {
-  stationeerMIPSGenerator.reset();
-  const code = stationeerMIPSGenerator.workspaceToCode(ws);
-  codeDiv.innerText = stationeerMIPSGenerator.generateFrontMatter();
+  mipsGenerator.reset();
+  const code = mipsGenerator.workspaceToCode(ws);
+  codeDiv.innerText = mipsGenerator.generateFrontMatter();
   codeDiv.innerText += code;
-  codeDiv.innerText += stationeerMIPSGenerator.generateBackMatter();
+  codeDiv.innerText += mipsGenerator.generateBackMatter();
 
-  outputDiv.innerText = stationeerMIPSGenerator._log;
+  outputDiv.innerText = mipsGenerator._log;
 
   ic10encode( codeDiv.innerText, ic10emuBtn );
 };
@@ -60,7 +68,11 @@ document.getElementById('extra').innerHTML = extra_links.join('\n');
 
 
 // Load the initial state from storage and run the code.
-load(ws);
+try {
+  load(ws);
+} catch ( err ) {
+  console.log( "Failed to load existing code... sorry :(" );
+}
 runCode();
 
 // Every time the workspace changes state, save the changes to storage.
