@@ -12,6 +12,7 @@ export const configToolbox = function() {
         "colour": TOOLBOX_HUE,
         "contents": [
             { 'kind': 'block', 'type': 'ic10config' },
+            { 'kind': 'block', 'type': 'ic10device' },
         ]
     };
 }
@@ -55,15 +56,24 @@ Blockly.common.defineBlocks(
                         "check": Type.PortConnection
                     },
                 ],
-                "previousStatement": null,
-                "nextStatement": null,
+                "output": Type.PortConnection,
                 "colour": TOOLBOX_HUE,
             },
         ]
     )
 );
 
+// State Tracking //
+mipsGenerator.devices = [];
+mipsGenerator.nextDeviceID = 0;
+
+mipsGenerator.getNextDeviceId = function() {
+    return ++mipsGenerator.nextDeviceID;
+}
+
+
 // Code Generators //
 mipsGenerator.forBlock['ic10config'] = function( block, generator ) {
+    block.data = generator.getNextDeviceId();
     return [ '...config...' ].join("\n");
 };

@@ -55,30 +55,6 @@ code {
   border-bottom: 3px rgba( 0, 100, 0, 0.5 );
 }
 
-.blocklyToolboxCategory {
-  margin: 0.5rem;
-  border: 1px solid darkgray;
-  border-radius: 0.5rem;
-  box-shadow: 0 0 0.25rem darkgray;
-  padding: 0.25rem;
-}
-
-.blocklyToolboxCategory[aria-selected="true"] {
-  border-width: 3px;
-}
-
-.blocklyTreeRow {
-  margin: 0;
-}
-
-.blocklyTreeSelected {
-  border-right: none;
-}
-
-.blocklyFlyout {
-  transform: translate( 200px ) !important;
-}
-
 #pageContainer {
   position: absolute;
   top: 4rem;

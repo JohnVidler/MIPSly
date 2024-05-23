@@ -28,3 +28,27 @@ export const PORTS = [
     [ "d5", "d5" ],
     [ "db", "db" ],
 ];
+
+export const CONDITIONS = [
+    [ "is equal to", "EQUAL" ],
+    [ "is not equal to", "NOT_EQUAL" ],
+    [ "is less than", "LESS_THAN" ],
+    [ "is less than or equal to", "LESS_OR_EQUAL" ],
+    [ "is greater than", "GREATER_THAN" ],
+    [ "is greater or equal to", "GREATER_OR_EQUAL" ],
+];
+
+export const OPERATORS = [
+    [ "+", "ADD" ],
+    [ "-", "SUB" ],
+    [ "/", "DIV" ],
+    [ "%", "MOD" ],
+    [ "x", "MUL" ]
+];
+
+export const GROUP_OPS = [
+    [ "Average", "0" ],
+    [ "Sum",     "1" ],
+    [ "Minimum", "2" ],
+    [ "Maximum", "3" ],
+];

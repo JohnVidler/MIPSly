@@ -1,62 +1,6 @@
 import * as Blockly from 'blockly';
 import { getPrefabIndex } from '../stationpedia';
-
-// Deprecated, use ic10.js -> REGISTERS
-const REGISTERS = [
-    [ "r0", "r0" ],
-    [ "r1", "r1" ],
-    [ "r2", "r2" ],
-    [ "r3", "r3" ],
-    [ "r4", "r4" ],
-    [ "r5", "r5" ],
-    [ "r6", "r6" ],
-    [ "r7", "r7" ],
-    [ "r8", "r8" ],
-    [ "r9", "r9" ],
-    [ "r10", "r10" ],
-    [ "r11", "r11" ],
-    [ "r12", "r12" ],
-    [ "r13", "r13" ],
-    [ "r14", "r14" ],
-    [ "r15", "r15" ],
-    [ "ra", "ra" ],
-    [ "sp", "sp" ],
-];
-
-// Deprecated, use ic10.js -> PORTS
-const PORTS = [
-    [ "d0", "d0" ],
-    [ "d1", "d1" ],
-    [ "d2", "d2" ],
-    [ "d3", "d3" ],
-    [ "d4", "d4" ],
-    [ "d5", "d5" ],
-    [ "db", "db" ],
-];
-
-const CONDITIONS = [
-    [ "is equal to", "EQUAL" ],
-    [ "is not equal to", "NOT_EQUAL" ],
-    [ "is less than", "LESS_THAN" ],
-    [ "is less than or equal to", "LESS_OR_EQUAL" ],
-    [ "is greater than", "GREATER_THAN" ],
-    [ "is greater or equal to", "GREATER_OR_EQUAL" ],
-];
-
-const OPERATORS = [
-    [ "+", "ADD" ],
-    [ "-", "SUB" ],
-    [ "/", "DIV" ],
-    [ "%", "MOD" ],
-    [ "x", "MUL" ]
-];
-
-const GROUP_OPS = [
-    [ "Average", "0" ],
-    [ "Sum",     "1" ],
-    [ "Minimum", "2" ],
-    [ "Maximum", "3" ],
-];
+import { REGISTERS, PORTS, CONDITIONS, OPERATORS, GROUP_OPS } from '../ic10';
 
 export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
     [
@@ -455,43 +399,6 @@ export const blocks = Blockly.common.createBlockDefinitionsFromJsonArray(
             ],
             "previousStatement": null,
             "nextStatement": null,
-            "colour": 130,
-        },
-
-        {
-            "type": "color",
-            "message0": "%1",
-            "args0": [
-                {
-                    "type": "field_dropdown",
-                    "name": "COLOR",
-                    "options": [
-                        [ "Blue", "0" ],
-                        [ "Grey", "1" ],
-                        [ "Green", "2" ],
-                        [ "Orange", "3" ],
-                        [ "Red", "4" ],
-                        [ "Yellow", "5" ],
-                        [ "White", "6" ],
-                        [ "Black", "7" ],
-                        [ "Brown", "8" ],
-                        [ "Khaki", "9" ],
-                        [ "Pink", "10" ],
-                        [ "Purple", "11" ],
-                    ]
-                },
-            ],
-            "output": "Number",
-            "colour": 130,
-        },
-
-        {
-            "type": "hash",
-            "message0": "the prefab hash for %1",
-            "args0": [
-                { "type": "field_input", "name": "HASH", "text": "device" },
-            ],
-            "output": "Number",
             "colour": 130,
         },
     ]

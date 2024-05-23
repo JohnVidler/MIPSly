@@ -41,7 +41,7 @@ function App() {
             <h3>Extra Build Information</h3>
             <div id="output"><code>{buildLog}</code></div>
           </div>
-          <BlocklyEditor dataHook={setJsonInternals} ic10URL={setIC10Sharelink} codeHook={setMipsCode} />
+          <BlocklyEditor dataHook={setJsonInternals} ic10URL={setIC10Sharelink} codeHook={setMipsCode} logH />
         </div>
       )}
 
@@ -53,8 +53,14 @@ function App() {
 
       {getTab == 2 && (
         <div className="grow flex flex-row tabContent">
-          {jsonInternals && (<pre className="text-xs font-mono text-wrap">{ JSON.stringify(JSON.parse(jsonInternals),null,2) }</pre>)}
-          {ic10Sharelink && (<pre className="text-xs font-mono text-wrap">{ ic10Sharelink }</pre>)}
+          {jsonInternals && (<code>
+            <h3>JSON Data</h3>
+            <pre className="text-xs font-mono text-wrap">{ JSON.stringify(JSON.parse(jsonInternals),null,2) }</pre>
+          </code>)}
+          {ic10Sharelink && (<code>
+            <h3>IC10.dev Share Link Data</h3>
+            <pre className="text-xs font-mono text-wrap">{ ic10Sharelink }</pre>
+          </code>)}
         </div>
       )}
 

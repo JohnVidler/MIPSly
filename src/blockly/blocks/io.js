@@ -166,3 +166,229 @@ mipsGenerator.forBlock['property-enum'] = function( block, generator ) {
 
     return [ context, Order.ATOMIC ];
 };
+
+mipsGenerator.forBlock['port-state'] = function( block, generator ) {
+    const output = [];
+
+    const port  = block.getFieldValue( 'PORT' ) || "d0";
+    const state = block.getFieldValue( 'STATE' ) || "connected";
+
+    const result = generator.getTempRegister();
+    generator.pinRegister( result );
+
+    switch( state ) {
+        case "connected":
+            output.push( `sdse ${result} ${port}` );
+            break;
+        
+        case "disconnected":
+            output.push( `sdns ${result} ${port}` );
+            break;
+
+        default:
+            output.push( `#!! Unknown state: ${state} !!#` )
+    }
+
+    return [ output.join("\n"), Order.ATOMIC ];
+}
+
+mipsGenerator.forBlock['set'] = function( block, generator ) {
+    const output = [];
+    let dest  = block.getFieldValue( "DEST" );
+    const source  = generator.valueToCode( block, "SOURCE", Order.ATOMIC ) || "0";
+
+    generator.isAlias( dest );
+    dest = generator.resolveAlias( dest );
+
+    const [readable, preamble] = loaderShim( source );
+    if( preamble ) {
+        output.push( preamble );
+        generator.unPinRegister( readable );
+    }
+
+    // Is this a literal register?
+    if( REGISTERS.indexOf(dest) > -1 ) {
+        generator.pinRegister( dest );
+        if( dest !== readable )
+            output.push( `move ${dest} ${readable}` )
+        return output.join('\n');
+    }
+
+    // Check the alias table, do we already have a reg?
+    if( generator.isAlias(dest) ) {
+        dest = generator.resolveAlias( dest );
+    }
+
+    // Otherwise we're creating a variable, so grab a spare reg
+    const reg = generator.getTempRegister();
+    generator.pinRegister( reg );
+
+    generator.aliasList[ dest ] = reg;
+    if( reg !== readable )
+        output.push( `move ${reg} ${readable}` )
+    return output.join('\n');
+}
+
+mipsGenerator.forBlock['get'] = function( block, generator ) {
+    let source = block.getFieldValue( "SOURCE" );
+
+    //const predefined = isAlias( source );
+    source = generator.resolveAlias( source );
+
+    return [ source, Order.ATOMIC ];
+}
+
+mipsGenerator.forBlock["read"] = function( block, generator ) {
+    const prop = block.getFieldValue( 'PROPERTY' );
+    const port = block.getFieldValue( 'PORT' );
+
+    const reg = generator.getTempRegister();
+    if( reg === undefined )
+        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
+    generator.pinRegister( reg );
+
+    return [
+        `l ${reg} ${port} ${prop}`,
+        Order.ATOMIC
+    ];
+}
+
+mipsGenerator.forBlock["read-batch"] = function( block, generator ) {
+    const operation = block.getFieldValue( 'OPERATION' );
+    const prop      = block.getFieldValue( 'PROPERTY' );
+    let   hash      = block.getFieldValue( 'HASH' );
+
+    const reg = generator.getTempRegister();
+    if( reg === undefined )
+        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
+    generator.pinRegister( reg );
+
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${hash}")` ) ) {
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = generator.isDefined( `HASH("${hash}")` ); // Number
+
+    return [
+        `lb ${reg} ${hash} ${prop} ${operation}`,
+        Order.ATOMIC
+    ];
+}
+
+mipsGenerator.forBlock["read-batch-named"] = function( block, generator ) {
+    const operation = block.getFieldValue( 'OPERATION' );
+    const prop      = block.getFieldValue( 'PROPERTY' );
+    let   hash      = block.getFieldValue( 'HASH' );
+    let   name      = block.getFieldValue( 'NAME' );
+
+    const reg = generator.getTempRegister();
+    if( reg === undefined )
+        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
+    generator.pinRegister( reg );
+
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${hash}")` ) ) {
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = generator.isDefined( `HASH("${hash}")` ); // Number
+
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${name}")` ) ) {
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${name}")`;
+        name = symbol;
+    }
+    else
+        name = generator.isDefined( `HASH("${name}")` ); // Number
+
+    return [
+        `lbn ${reg} ${hash} ${name} ${prop} ${operation}`,
+        Order.ATOMIC
+    ];
+}
+
+mipsGenerator.forBlock["write"] = function( block, generator ) {
+    const output = [];
+
+    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
+    const prop = block.getFieldValue( 'PROPERTY' );
+    const port = block.getFieldValue( 'PORT' );
+
+    const [readable, preamble] = generator.loaderShim( source );
+    if( preamble )
+        output.push( preamble );
+
+    output.push( `s ${port} ${prop} ${readable}` );
+    return output.join("\n");
+}
+
+//sb deviceHash logicType r?
+mipsGenerator.forBlock["write-batch"] = function( block, generator ) {
+    const output = [];
+
+    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
+    const prop    = block.getFieldValue( 'PROPERTY' );
+    let   hash    = block.getFieldValue( 'HASH' );
+    
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${hash}")` ) ) {
+
+        if( !Object.keys(LOGIC_COMPONENTS).includes( hash ) )
+            output.push( "# Warn: Unknown prefab name" );
+
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${hash}")`;
+        hash = symbol;
+    }
+    else
+        hash = generator.isDefined( `HASH("${hash}")` ); // Number
+
+    const [readable, preamble] = generator.loaderShim( source );
+    if( preamble )
+        output.push( preamble );
+
+    output.push( `sb ${hash} ${prop} ${readable}` );
+    return output.join("\n");
+}
+
+//sbn deviceHash nameHash logicType r?
+mipsGenerator.forBlock["write-batch-named"] = function( block, generator ) {
+    const output = [];
+
+    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
+    const prop    = block.getFieldValue( 'PROPERTY' );
+    let   hash    = block.getFieldValue( 'HASH' );
+    let   name    = block.getFieldValue( 'NAME' );
+
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${hash}")` ) ) {
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${hash}")`;
+        
+        hash = symbol;
+    }
+    else
+        hash = generator.isDefined( `HASH("${hash}")` ); // Number
+
+    // Is this hash not known?
+    if( !generator.isDefined( `HASH("${name}")` ) ) {
+        const symbol = generator.genDefineSymbol();
+        generator.defineList[symbol] = `HASH("${name}")`;
+        name = symbol;
+    }
+    else
+        name = generator.isDefined( `HASH("${name}")` ); // Number
+
+    const [readable, preamble] = generator.loaderShim( source );
+    if( preamble )
+        output.push( preamble );
+
+    output.push( `sbn ${hash} ${name} ${prop} ${readable}` );
+    return output.join("\n");
+}

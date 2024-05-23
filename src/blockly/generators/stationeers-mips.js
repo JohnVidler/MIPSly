@@ -2,7 +2,8 @@ import * as Blockly from 'blockly';
 import { LOGIC_COMPONENTS } from '../stationpedia';
 
 export const Order = {
-    ATOMIC: 0
+    ATOMIC: 0,
+    RUNTIME: 1
 };
 
 export const Type = {
@@ -22,120 +23,174 @@ const REGISTERS = [
 
 const PORTS = [ "d0", "d1", "d2", "d3", "d4", "d5", "db" ];
 
-let aliasList = {}
-let defineList = {}
-let functionList = {}
+export const mipsGenerator = new Blockly.Generator('stationeersMIPS');
 
-let pinnedRegisters = [];
-function getTempRegister() {
+mipsGenerator.aliasList = {}
+mipsGenerator.defineList = {}
+mipsGenerator.functionList = {}
+mipsGenerator.pinnedRegisters = [];
+mipsGenerator.labelList = [];
+
+mipsGenerator.getTempRegister = function() {
     for( let reg in REGISTERS ) {
-        if( !pinnedRegisters.includes( REGISTERS[reg] ) )
+        if( !this.pinnedRegisters.includes( REGISTERS[reg] ) )
             return REGISTERS[reg];
     }
     console.warn( "# ERR: SORRY! RAN OUT OF REGISTERS :(" );
     return undefined;
 }
-function pinRegister( reg ) {
-    if( pinnedRegisters.includes( reg ) )
+mipsGenerator.pinRegister = function( reg ) {
+    if( this.pinnedRegisters.includes( reg ) )
         return false
-    pinnedRegisters.push( reg );
+    this.pinnedRegisters.push( reg );
 
     return true;
 }
-function unPinRegister( reg ) {
-    const index = pinnedRegisters.indexOf( reg )
+mipsGenerator.unPinRegister = function( reg ) {
+    const index = this.pinnedRegisters.indexOf( reg )
 
     if( index > -1 ) {
-        pinnedRegisters.splice( index, 1 );
+        this.pinnedRegisters.splice( index, 1 );
         return true;
     }
     return false;
 }
 
-let labelList = [];
-function genLabel() {
-    const label = `L${labelList.length}`;
-    labelList.push( label );
+mipsGenerator.genLabel = function() {
+    const label = `L${this.labelList.length}`;
+    this.labelList.push( [label] );
     return label;
 }
 
-function genDefineSymbol() {
+mipsGenerator.genDefineSymbol = function() {
     let index = 0;
-    while( Object.keys(defineList).find( v => v === `G${index}` ) )
+    while( Object.keys(this.defineList).find( v => v === `G${index}` ) )
         index++;
     return `G${index}`;
 }
 
-function isAlias( alias ) {
-    if( aliasList[alias] )
+mipsGenerator.isAlias = function( alias ) {
+    if( this.aliasList[alias] )
         return true;
     return false;
 }
 
-function isDefined( name ) {
-    for( let key of Object.keys(defineList) ) {
-        if( defineList[key] === name )
+mipsGenerator.isDefined = function( name ) {
+    for( let key of Object.keys(this.defineList) ) {
+        if( this.defineList[key] === name )
             return key;
     }
     return undefined;
 }
 
-function isPort( input ) {
+mipsGenerator.isPort = function( input ) {
     return (PORTS.indexOf(input) > -1 );
 }
 
-function isRegister( input ) {
+mipsGenerator.isRegister = function( input ) {
     return (REGISTERS.indexOf(input) > -1 );
 }
 
-function resolveAlias( alias, depth = 0 ) {
+mipsGenerator.resolveAlias = function( alias, depth = 0 ) {
     if( depth > 100 ) {
         console.warn( "Too much alias recursion! Stopping at the 100th iteration." );
         return alias;
     }
 
-    if( aliasList[alias] )
-        return resolveAlias( aliasList[alias], depth + 1 )
+    if( this.aliasList[alias] )
+        return this.resolveAlias( aliasList[alias], depth + 1 )
 
     return alias;
 }
-
-export const mipsGenerator = new Blockly.Generator('stationeersMIPS');
 
 mipsGenerator.log = function( line ) {
     this._log += line + "\n";
 }
 
+mipsGenerator.loaderShim = function( input ) {
+    // Is this ACTUALLY code?
+    if( Number.isNaN(Number.parseFloat(input)) && !this.isRegister(input) && !this.isPort(input) ) {
+        // Grab the last-pinned reg...
+        const lastReg = this.pinnedRegisters[this.pinnedRegisters.length - 1]; //pinnedRegisters.pop();
+
+        console.log( `code! ${input} -> ${lastReg}` );
+        return [ lastReg, input ]
+    }
+    return [ input, null ]
+}
+
+mipsGenerator._conditionalShim = function( condition, falseLabel, generator ) {
+    // checks here!
+    let [readable, preamble] = generator.loaderShim( condition );
+    if( preamble ) {
+        const preambleLines = preamble.split("\n");
+        const lastLine = preambleLines[preambleLines.length - 1];
+
+        // Is this a 'store-compare' line? If so, mangle it into a branch!
+        let branchLine = `${lastLine}`.split(' ');
+        if( ["seq", "sne", "slt", "sle", "sgt", "sge" ].includes(branchLine[0]) ) {
+            
+            preambleLines.splice(-1);
+
+            // Note - branch logic here is flipped, as we're SKIPPING if these are true.
+            // This is an extremely minor optimisation, as it lets us save a label
+            // for the actual if-true branch, and simply fails over the inner code
+            // if required.
+            
+            branchLine[0] = {
+                "seq": "bne",
+                "sne": "beq",
+                "slt": "bge",
+                "sle": "bgt",
+                "sgt": "ble",
+                "sge": "blt"
+            }[branchLine[0]];
+
+            branchLine.splice( 1, 1 );
+            branchLine.push( falseLabel );
+
+            preambleLines.push( branchLine.join(" ") );
+        }
+        else // Implicit 'branch if true'
+            preambleLines.push( `bne ${readable} 1 ${falseLabel}` );
+        
+        preamble = preambleLines.join("\n");
+    }
+
+    return [readable, preamble];
+}
+
+
 mipsGenerator.generateFrontMatter = function() {
     const output = [];
 
-    if( Object.keys(aliasList).length > 0 && !this.NO_ALIAS ) {
+    if( Object.keys(this.aliasList).length > 0 && !this.NO_ALIAS ) {
         output.push( "# ALIASES #" )
-        for( const key in aliasList ) {
-            output.push( `<span title="This is an alias!">alias ${key} ${aliasList[key]}</span>` );
-            this.log( `${key} = ${aliasList[key]}` );
+        for( const key in this.aliasList ) {
+            output.push( `<span title="This is an alias!">alias ${key} ${this.aliasList[key]}</span>` );
+            this.log( `${key} = ${this.aliasList[key]}` );
         }
     }
     
-    if( Object.keys(defineList).length > 0 ) {
+    if( Object.keys(this.defineList).length > 0 ) {
         output.push( "\n# DEFINITIONS #" )
-        for( const key in defineList )
-            output.push( `define ${key} ${defineList[key]}` );
+        for( const key in this.defineList )
+            output.push( `define ${key} ${this.defineList[key]}` );
     }
 
     if( output.length > 0 )
         output.push( "\n# CODE #\n" );
 
-    return output;
+    return output.join("\n");
 }
 
 mipsGenerator.generateBackMatter = function() {
     const output = [];
 
-    if( Object.keys(functionList).length > 0 ) {
+    if( Object.keys(this.functionList).length > 0 ) {
         output.push( "\n\n# FUNCTIONS #" )
-        for( const key in functionList )
-            output.push( `${functionList[key]}` );
+        for( const key in this.functionList )
+            output.push( `${this.functionList[key]}` );
     }
 
     return output.join('\n');
@@ -149,11 +204,11 @@ mipsGenerator.reset = function() {
 
     this._log = "";
 
-    pinnedRegisters = [];
-    aliasList = {};
-    defineList = {};
-    functionList = {};
-    labelList = [];
+    this.pinnedRegisters = [];
+    this.aliasList = {};
+    this.defineList = {};
+    this.functionList = {};
+    this.labelList = [];
 }
 
 mipsGenerator.serialiseCode = function( code ) {
@@ -193,45 +248,19 @@ mipsGenerator.forBlock['define'] = function( block, generator ) {
     const name = block.getFieldValue( "NAME" ) || "??";
     const port = block.getFieldValue( "PORT" ) || "??";
 
-    if( pinRegister( port ) )
-        aliasList[ name ] = port;
+    if( generator.pinRegister( port ) )
+        generator.aliasList[ name ] = port;
 
     return "";
 }
 
-mipsGenerator.forBlock['function'] = function( block, generator ) {
-    const name = block.getFieldValue( 'FUNCTION_NAME' ) || "function";
-    const statements = generator.statementToCode( block, 'MEMBERS' );
 
-    // Commented out for now as SemlerPDX complained
-    /*const code = [
-        `${name}:`,
-        'push ra',
-        statements,
-        'pop ra',
-        'j ra'
-    ].join("\n");*/
 
-    const code = [
-        `${name}:`,
-        statements,
-        'j ra'
-    ].join("\n");
 
-    functionList[name] = code;
-    labelList.push( name );
-
-    return null;
-}
-
-mipsGenerator.forBlock['call'] = function( block, generator ) {
-    const name = block.getFieldValue( 'FUNCTION_NAME' ) || "function"
-    return `jal ${name}`;
-}
 
 mipsGenerator.forBlock['forever'] = function( block, generator ) {
     const output = [];
-    const label = genLabel();
+    const label = generator.genLabel();
     const statements = generator.statementToCode( block, 'MEMBERS' );
 
     output.push( `${label}:` );
@@ -256,53 +285,14 @@ mipsGenerator.forBlock['forever'] = function( block, generator ) {
     return output.join('\n');
 }*/
 
-mipsGenerator._conditionalShim = function( condition, falseLabel ) {
-    // checks here!
-    let [readable, preamble] = loaderShim( condition );
-    if( preamble ) {
-        const preambleLines = preamble.split("\n");
-        const lastLine = preambleLines[preambleLines.length - 1];
 
-        // Is this a 'store-compare' line? If so, mangle it into a branch!
-        let branchLine = `${lastLine}`.split(' ');
-        if( ["seq", "sne", "slt", "sle", "sgt", "sge" ].includes(branchLine[0]) ) {
-            
-            preambleLines.splice(-1);
-
-            // Note - branch logic here is flipped, as we're SKIPPING if these are true.
-            // This is an extremely minor optimisation, as it lets us save a label
-            // for the actual if-true branch, and simply fails over the inner code
-            // if required.
-            
-            branchLine[0] = {
-                "seq": "bne",
-                "sne": "beq",
-                "slt": "bge",
-                "sle": "bgt",
-                "sgt": "ble",
-                "sge": "blt"
-            }[branchLine[0]];
-
-            branchLine.splice( 1, 1 );
-            branchLine.push( falseLabel );
-
-            preambleLines.push( branchLine.join(" ") );
-        }
-        else // Implicit 'branch if true'
-            preambleLines.push( `bne ${readable} 1 ${falseLabel}` );
-        
-        preamble = preambleLines.join("\n");
-    }
-
-    return [readable, preamble];
-}
 
 mipsGenerator.forBlock['if'] = function( block, generator ) {
     const output = [];
-    const falseLabel = genLabel();
+    const falseLabel = generator.genLabel();
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel, generator )
     if( preamble )
         output.push( preamble );
 
@@ -313,11 +303,11 @@ mipsGenerator.forBlock['if'] = function( block, generator ) {
 
 mipsGenerator.forBlock['if-else'] = function( block, generator ) {
     const output = [];
-    const falseLabel = genLabel();
-    const skipLabel  = genLabel();
+    const falseLabel = generator.genLabel();
+    const skipLabel  = generator.genLabel();
     const condition        = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
-    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel, generator )
     if( preamble )
         output.push( preamble );
     
@@ -331,12 +321,12 @@ mipsGenerator.forBlock['if-else'] = function( block, generator ) {
 
 mipsGenerator.forBlock['while'] = function( block, generator ) {
     const output = [];
-    const loopLabel = genLabel();
-    const falseLabel = genLabel();
+    const loopLabel = generator.genLabel();
+    const falseLabel = generator.genLabel();
     const condition  = generator.valueToCode( block, "CONDITION", Order.ATOMIC );
 
     output.push( `${loopLabel}:` );
-    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel )
+    const [, preamble] = mipsGenerator._conditionalShim( condition, falseLabel, generator )
     if( preamble )
         output.push( preamble );
 
@@ -348,12 +338,12 @@ mipsGenerator.forBlock['while'] = function( block, generator ) {
 
 mipsGenerator.forBlock['repeat'] = function( block, generator ) {
     const output = [];
-    const loopLabel = genLabel();
-    const falseLabel = genLabel();
+    const loopLabel = generator.genLabel();
+    const falseLabel = generator.genLabel();
     const iterations  = generator.valueToCode( block, "ITERATIONS", Order.ATOMIC );
 
-    let counter = getTempRegister()
-    pinRegister( counter );
+    let counter = generator.getTempRegister()
+    generator.pinRegister( counter );
 
     output.push( `move ${counter} ${iterations}` );
     output.push( `${loopLabel}:` ); 
@@ -371,19 +361,19 @@ mipsGenerator.forBlock['condition'] = function( block, generator ) {
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
     const operator   = block.getFieldValue( 'OPERATOR' ) || "EQUAL"
 
-    const [lReadable, lPreamble] = loaderShim( lvalue );
+    const [lReadable, lPreamble] = generator.loaderShim( lvalue );
     if( lPreamble )
         output.push( lPreamble );
-    unPinRegister( lReadable );
+    generator.unPinRegister( lReadable );
 
-    const [rReadable, rPreamble] = loaderShim( rvalue );
+    const [rReadable, rPreamble] = generator.loaderShim( rvalue );
     if( rPreamble )
         output.push( rPreamble );
-    unPinRegister( rReadable );
+    generator.unPinRegister( rReadable );
 
     // ... to make room for our own value, if its not already used...
-    const result = getTempRegister();
-    pinRegister( result );
+    const result = generator.getTempRegister();
+    generator.pinRegister( result );
 
     switch( operator ) {
         case "EQUAL":
@@ -423,19 +413,19 @@ mipsGenerator.forBlock['arithmetic'] = function( block, generator ) {
     const rvalue     = generator.valueToCode( block, "RVALUE", Order.ATOMIC ) || "0";
     const operator   = block.getFieldValue( 'OPERATOR' ) || "ADD"
 
-    const [lReadable, lPreamble] = loaderShim( lvalue );
+    const [lReadable, lPreamble] = generator.loaderShim( lvalue );
     if( lPreamble )
         output.push( lPreamble );
-    unPinRegister( lReadable );
+    generator.unPinRegister( lReadable );
 
-    const [rReadable, rPreamble] = loaderShim( rvalue );
+    const [rReadable, rPreamble] = generator.loaderShim( rvalue );
     if( rPreamble )
         output.push( rPreamble );
-    unPinRegister( rReadable );
+    generator.unPinRegister( rReadable );
 
     // ... to make room for our own value, if its not already used...
-    const result = getTempRegister();
-    pinRegister( result );
+    const result = generator.getTempRegister();
+    generator.pinRegister( result );
 
     switch( operator ) {
         case "ADD":
@@ -474,16 +464,16 @@ mipsGenerator.forBlock['bitwise-ops'] = function( block, generator ) {
     const [lReadable, lPreamble] = loaderShim( lvalue );
     if( lPreamble )
         output.push( lPreamble );
-    unPinRegister( lReadable );
+    generator.unPinRegister( lReadable );
 
     const [rReadable, rPreamble] = loaderShim( rvalue );
     if( rPreamble )
         output.push( rPreamble );
-    unPinRegister( rReadable );
+    generator.unPinRegister( rReadable );
 
     // ... to make room for our own value, if its not already used...
-    const result = getTempRegister();
-    pinRegister( result );
+    const result = generator.getTempRegister();
+    generator.pinRegister( result );
 
     switch( operator ) {
         case "and":
@@ -523,16 +513,16 @@ mipsGenerator.forBlock['minmax'] = function( block, generator ) {
     const [lReadable, lPreamble] = loaderShim( lvalue );
     if( lPreamble )
         output.push( lPreamble );
-    unPinRegister( lReadable );
+    generator.unPinRegister( lReadable );
 
     const [rReadable, rPreamble] = loaderShim( rvalue );
     if( rPreamble )
         output.push( rPreamble );
-    unPinRegister( rReadable );
+    generator.unPinRegister( rReadable );
 
     // ... to make room for our own value, if its not already used...
-    const result = getTempRegister();
-    pinRegister( result );
+    const result = generator.getTempRegister();
+    generator.pinRegister( result );
 
     switch( operator ) {        
         case "MIN":
@@ -550,92 +540,9 @@ mipsGenerator.forBlock['minmax'] = function( block, generator ) {
     return [ output.join("\n"), Order.ATOMIC ];
 }
 
-mipsGenerator.forBlock['port-state'] = function( block, generator ) {
-    const output = [];
 
-    const port  = block.getFieldValue( 'PORT' ) || "d0";
-    const state = block.getFieldValue( 'STATE' ) || "connected";
 
-    const result = getTempRegister();
-    pinRegister( result );
 
-    switch( state ) {
-        case "connected":
-            output.push( `sdse ${result} ${port}` );
-            break;
-        
-        case "disconnected":
-            output.push( `sdns ${result} ${port}` );
-            break;
-
-        default:
-            output.push( `#!! Unknown state: ${state} !!#` )
-    }
-
-    return [ output.join("\n"), Order.ATOMIC ];
-}
-
-mipsGenerator.forBlock['set'] = function( block, generator ) {
-    const output = [];
-    let dest  = block.getFieldValue( "DEST" );
-    const source  = generator.valueToCode( block, "SOURCE", Order.ATOMIC ) || "0";
-
-    isAlias( dest );
-    dest = resolveAlias( dest );
-
-    const [readable, preamble] = loaderShim( source );
-    if( preamble ) {
-        output.push( preamble );
-        unPinRegister( readable );
-    }
-
-    // Is this a literal register?
-    if( REGISTERS.indexOf(dest) > -1 ) {
-        pinRegister( dest );
-        if( dest !== readable )
-            output.push( `move ${dest} ${readable}` )
-        return output.join('\n');
-    }
-
-    // Check the alias table, do we already have a reg?
-    if( isAlias(dest) ) {
-        dest = resolveAlias( dest );
-    }
-
-    // Otherwise we're creating a variable, so grab a spare reg
-    const reg = getTempRegister();
-    pinRegister( reg );
-
-    aliasList[ dest ] = reg;
-    if( reg !== readable )
-        output.push( `move ${reg} ${readable}` )
-    return output.join('\n');
-}
-
-mipsGenerator.forBlock['get'] = function( block, generator ) {
-    let source = block.getFieldValue( "SOURCE" );
-
-    //const predefined = isAlias( source );
-    source = resolveAlias( source );
-
-    return [ source, Order.ATOMIC ];
-}
-
-mipsGenerator.forBlock['wait'] = () => "yield";
-mipsGenerator.forBlock['sleep'] = function ( block, generator ) {
-    const output = []
-    let time = generator.valueToCode( block, "TIME", Order.ATOMIC ) || "1";
-
-    const [readable, preamble] = loaderShim( time );
-    if( preamble )
-        output.push( preamble );
-    unPinRegister( readable );
-
-    output.push( `sleep ${readable}` );
-
-    return output.join("\n")
-}
-mipsGenerator.forBlock['explode'] = () => "hcf # Boom :)";
 
 mipsGenerator.forBlock["math_number"] = function( block, generator ) {
     return [
@@ -651,188 +558,8 @@ mipsGenerator.forBlock["logic_boolean"] = function( block, generator ) {
     ];
 }
 
-mipsGenerator.forBlock["read"] = function( block, generator ) {
-    const prop = block.getFieldValue( 'PROPERTY' );
-    const port = block.getFieldValue( 'PORT' );
 
-    const reg = getTempRegister();
-    if( reg === undefined )
-        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
-    pinRegister( reg );
 
-    return [
-        `l ${reg} ${port} ${prop}`,
-        Order.ATOMIC
-    ];
-}
-
-mipsGenerator.forBlock["read-batch"] = function( block, generator ) {
-    const operation = block.getFieldValue( 'OPERATION' );
-    const prop      = block.getFieldValue( 'PROPERTY' );
-    let   hash      = block.getFieldValue( 'HASH' );
-
-    const reg = getTempRegister();
-    if( reg === undefined )
-        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
-    pinRegister( reg );
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${hash}")`;
-        hash = symbol;
-    }
-    else
-        hash = isDefined( `HASH("${hash}")` ); // Number
-
-    return [
-        `lb ${reg} ${hash} ${prop} ${operation}`,
-        Order.ATOMIC
-    ];
-}
-
-mipsGenerator.forBlock["read-batch-named"] = function( block, generator ) {
-    const operation = block.getFieldValue( 'OPERATION' );
-    const prop      = block.getFieldValue( 'PROPERTY' );
-    let   hash      = block.getFieldValue( 'HASH' );
-    let   name      = block.getFieldValue( 'NAME' );
-
-    const reg = getTempRegister();
-    if( reg === undefined )
-        return "# ERR: SORRY! RAN OUT OF REGISTERS :(";
-    pinRegister( reg );
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${hash}")`;
-        hash = symbol;
-    }
-    else
-        hash = isDefined( `HASH("${hash}")` ); // Number
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${name}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${name}")`;
-        name = symbol;
-    }
-    else
-        name = isDefined( `HASH("${name}")` ); // Number
-
-    return [
-        `lbn ${reg} ${hash} ${name} ${prop} ${operation}`,
-        Order.ATOMIC
-    ];
-}
-
-mipsGenerator.forBlock["write"] = function( block, generator ) {
-    const output = [];
-
-    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
-    const prop = block.getFieldValue( 'PROPERTY' );
-    const port = block.getFieldValue( 'PORT' );
-
-    const [readable, preamble] = loaderShim( source );
-    if( preamble )
-        output.push( preamble );
-
-    output.push( `s ${port} ${prop} ${readable}` );
-    return output.join("\n");
-}
-
-//sb deviceHash logicType r?
-mipsGenerator.forBlock["write-batch"] = function( block, generator ) {
-    const output = [];
-
-    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
-    const prop    = block.getFieldValue( 'PROPERTY' );
-    let   hash    = block.getFieldValue( 'HASH' );
-    
-    // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
-
-        if( !Object.keys(LOGIC_COMPONENTS).includes( hash ) )
-            output.push( "# Warn: Unknown prefab name" );
-
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${hash}")`;
-        hash = symbol;
-    }
-    else
-        hash = isDefined( `HASH("${hash}")` ); // Number
-
-    const [readable, preamble] = loaderShim( source );
-    if( preamble )
-        output.push( preamble );
-
-    output.push( `sb ${hash} ${prop} ${readable}` );
-    return output.join("\n");
-}
-
-//sbn deviceHash nameHash logicType r?
-mipsGenerator.forBlock["write-batch-named"] = function( block, generator ) {
-    const output = [];
-
-    const source  = generator.valueToCode( block, 'SOURCE', Order.ATOMIC ) || 0;
-    const prop    = block.getFieldValue( 'PROPERTY' );
-    let   hash    = block.getFieldValue( 'HASH' );
-    let   name    = block.getFieldValue( 'NAME' );
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${hash}")`;
-        hash = symbol;
-    }
-    else
-        hash = isDefined( `HASH("${hash}")` ); // Number
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${name}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${name}")`;
-        name = symbol;
-    }
-    else
-        name = isDefined( `HASH("${name}")` ); // Number
-
-    const [readable, preamble] = loaderShim( source );
-    if( preamble )
-        output.push( preamble );
-
-    output.push( `sbn ${hash} ${name} ${prop} ${readable}` );
-    return output.join("\n");
-}
-
-mipsGenerator.forBlock["color"] = ( block, _ ) => [ `${block.getFieldValue( 'COLOR' )}`, Order.ATOMIC ];
-
-mipsGenerator.forBlock["hash"] = function( block, _ ) {
-    let hash = block.getFieldValue( 'HASH' );
-
-    // Is this hash not known?
-    if( !isDefined( `HASH("${hash}")` ) ) {
-        const symbol = genDefineSymbol();
-        defineList[symbol] = `HASH("${hash}")`;
-        hash = symbol;
-    }
-    else
-        hash = isDefined( `HASH("${hash}")` ); // Number
-
-    return [ `${hash}`, Order.ATOMIC ];
-}
-
-function loaderShim( input ) {
-    // Is this ACTUALLY code?
-    if( Number.isNaN(Number.parseFloat(input)) && !isRegister(input) && !isPort(input) ) {
-        // Grab the last-pinned reg...
-        const lastReg = pinnedRegisters[pinnedRegisters.length - 1]; //pinnedRegisters.pop();
-
-        console.log( `code! ${input} -> ${lastReg}` );
-        return [ lastReg, input ]
-    }
-    return [ input, null ]
-}
 
 
 mipsGenerator.forBlock['dummy'] = function( block, generator ) {
