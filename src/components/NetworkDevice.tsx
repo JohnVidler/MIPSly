@@ -1,9 +1,13 @@
 import { useState } from "react";
 import { LOGIC_COMPONENTS, getPrefabIndex } from "../blockly/stationpedia";
 
-export function NetworkDevice( props ) {
-    const [getName, setName] = useState();
-    const [getDescription, setDescription ] = useState();
+interface NetworkDeviceProps {
+    port: string
+}
+
+export function NetworkDevice( props: NetworkDeviceProps ) {
+    const [getName] = useState<string>();
+    const [getDescription, setDescription] = useState<string>();
 
     function updateInfo( e ) {
         const { value } = e.target;
@@ -15,10 +19,10 @@ export function NetworkDevice( props ) {
 
     return (
         <div className={"device_"+getName}>
-            <div class="inline p3">{props.port}</div>
-            <select class="p3" onChange={updateInfo}>
+            <div className="inline p3">{props.port}</div>
+            <select className="p3" onChange={updateInfo}>
                 <option value="_disconnected">Disconnected (None)</option>
-                { getPrefabIndex().map( v => (<option value={v[1]}>{v[0]}</option>) ) }
+                { getPrefabIndex().map( v => (<option key={v[1]} value={v[1]}>{v[0]}</option>) ) }
             </select>
             <div>{getDescription}</div>
         </div>

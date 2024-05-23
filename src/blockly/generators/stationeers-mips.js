@@ -8,6 +8,7 @@ export const Order = {
 export const Type = {
     Number: "Number",
     Boolean: "Boolean",
+    PortConnection: "PORT_CONNECTION",
     PortAction: "PORT_ACTION",
     Sound: "ENUM_SOUND"
 };
@@ -111,7 +112,7 @@ mipsGenerator.generateFrontMatter = function() {
     if( Object.keys(aliasList).length > 0 && !this.NO_ALIAS ) {
         output.push( "# ALIASES #" )
         for( const key in aliasList ) {
-            output.push( `alias ${key} ${aliasList[key]}` );
+            output.push( `<span title="This is an alias!">alias ${key} ${aliasList[key]}</span>` );
             this.log( `${key} = ${aliasList[key]}` );
         }
     }
@@ -125,7 +126,7 @@ mipsGenerator.generateFrontMatter = function() {
     if( output.length > 0 )
         output.push( "\n# CODE #\n" );
 
-    return output.join('\n');
+    return output;
 }
 
 mipsGenerator.generateBackMatter = function() {
@@ -202,11 +203,18 @@ mipsGenerator.forBlock['function'] = function( block, generator ) {
     const name = block.getFieldValue( 'FUNCTION_NAME' ) || "function";
     const statements = generator.statementToCode( block, 'MEMBERS' );
 
-    const code = [
+    // Commented out for now as SemlerPDX complained
+    /*const code = [
         `${name}:`,
         'push ra',
         statements,
         'pop ra',
+        'j ra'
+    ].join("\n");*/
+
+    const code = [
+        `${name}:`,
+        statements,
         'j ra'
     ].join("\n");
 
@@ -230,7 +238,7 @@ mipsGenerator.forBlock['forever'] = function( block, generator ) {
     output.push( statements );
     output.push( `j ${label}` );
 
-    return output.join( "\n" )
+    return output.join( "\n" );
 }
 
 /*mipsGenerator.forBlock['yield'] = function( block, generator ) {

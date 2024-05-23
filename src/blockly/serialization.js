@@ -15,6 +15,8 @@ const storageKey = 'mipsly';
 export const save = function(workspace) {
   const data = Blockly.serialization.workspaces.save(workspace);
   window.localStorage?.setItem(storageKey, JSON.stringify(data));
+
+  return data;
 };
 
 /**
@@ -30,3 +32,11 @@ export const load = function(workspace) {
   Blockly.serialization.workspaces.load(JSON.parse(data), workspace, false);
   Blockly.Events.enable();
 };
+
+
+export const read = function() {
+  const data = window.localStorage?.getItem(storageKey);
+  if (!data) return;
+
+  return data;
+}

@@ -1,3 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix for tailwind messing with svg rendering for blockly... */
+svg[display="none"] {
+  display: none;
+}
+
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
@@ -8,8 +18,7 @@ body {
 }
 
 code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 .boxed { 
@@ -23,4 +32,58 @@ code {
 
 .p3 {
   padding: 3px;
+}
+
+
+.code-render {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+  display:flex;
+  flex-direction: column;
+  border-left: 3px solid black;
+  padding-left: 0.5rem;
+
+  margin-bottom: 1rem;
+}
+
+.code-render .line {
+  display: block;
+}
+
+.code-render .scope {
+  background-color: rgba( 144, 238, 144, 0.2 );
+  border-top: 3px rgba( 0, 100, 0, 0.5 );
+  border-bottom: 3px rgba( 0, 100, 0, 0.5 );
+}
+
+.blocklyToolboxCategory {
+  margin: 0.5rem;
+  border: 1px solid darkgray;
+  border-radius: 0.5rem;
+  box-shadow: 0 0 0.25rem darkgray;
+  padding: 0.25rem;
+}
+
+.blocklyToolboxCategory[aria-selected="true"] {
+  border-width: 3px;
+}
+
+.blocklyTreeRow {
+  margin: 0;
+}
+
+.blocklyTreeSelected {
+  border-right: none;
+}
+
+.blocklyFlyout {
+  transform: translate( 200px ) !important;
+}
+
+#pageContainer {
+  position: absolute;
+  top: 4rem;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  margin-bottom: 4rem;
 }
