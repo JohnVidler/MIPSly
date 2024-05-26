@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import * as Blockly from 'blockly';
 import { BlocklyWorkspace } from 'react-blockly';
-import { save, load, read } from '../blockly/serialization';
-import { ic10encode } from '../blockly/integrations/ic10emu';
+import * as Serialization from '../blockly/serialization';
 import { blocks } from '../blockly/blocks/stationeers-mips';
 import { mipsGenerator } from '../blockly/generators/stationeers-mips';
 
-import MIPSCodeNode, { resetSpans } from '../blockly/generators/MIPSCodeNode';
+import { resetSpans } from '../blockly/generators/MIPSCodeNode';
 import MIPSCodeBlock from '../blockly/generators/MIPSCodeBlock'
 import MIPSComment from '../blockly/generators/MIPSComment'
 
@@ -49,27 +47,25 @@ Blockly.common.defineBlocks(blocks);
 type LogHook  = (code: string) => void
 type DataHook = (code: string) => void
 type CodeHook = (code: string) => void
-type NodeHook = (root: MIPSCodeNode) => void
-type IC10URL  = (url: string) => void
+//type NodeHook = (root: MIPSCodeNode) => void
 
 interface EditorProps {
     dataHook: DataHook | undefined,
     codeHook: CodeHook | undefined,
-    nodeHook: NodeHook | undefined,
-    ic10URL:  IC10URL | undefined,
+    //nodeHook: NodeHook | undefined,
     logHook:  LogHook | undefined,
 }
 
-export function BlocklyEditor( props: EditorProps) {
-    const [getCode,  setCode]     = useState<string>();
-
+export function BlocklyEditor( props: EditorProps ) {
+    //const [getCode,  setCode]     = useState<string>();
+    
     function runCode( workspace ) {
         try {
             resetSpans();
-            mipsGenerator.reset();
+            mipsGenerator['reset']();
             const code = mipsGenerator.workspaceToCode(workspace);
-            const frontMatter = mipsGenerator.generateFrontMatter();
-            const backMatter = mipsGenerator.generateBackMatter();
+            const frontMatter = mipsGenerator['generateFrontMatter']();
+            const backMatter = mipsGenerator['generateBackMatter']();
 
             const finalCode = [frontMatter, code, backMatter]
 
@@ -87,10 +83,7 @@ export function BlocklyEditor( props: EditorProps) {
             if( props.codeHook )
                 props.codeHook( finalCode.join("\n") );
             if( props.logHook )
-                props.logHook( mipsGenerator._log );
-
-            /*if( props.ic10URL )
-                ic10encode( props.ic10URL );*/
+                props.logHook( mipsGenerator['_log'] );
 
             return mips;
         } catch( err ) {
@@ -105,19 +98,23 @@ export function BlocklyEditor( props: EditorProps) {
         //const ic10emuBtn = document.getElementById('ic10emu-button');
         //workspace = Blockly.inject(blocklyDiv, {toolbox, renderer: 'Zelos'});
 
-        load( workspace );
+        Serialization.load( workspace );
         runCode( workspace );
     }
 
     function onChange( workspace ) {
         console.log("update...");
-        save( workspace );
+        Serialization.save( workspace );
 
         if( props.dataHook )
-            props.dataHook( read() );
+            props.dataHook( JSON.stringify(Serialization.read()) || "" );
 
         runCode( workspace );
     }
+
+    const options = {
+        trashcan: true,
+    };
 
     //<!--<pre id="generatedCode"><code>{getCode}</code></pre>-->
 
@@ -126,6 +123,7 @@ export function BlocklyEditor( props: EditorProps) {
         <BlocklyWorkspace
             className="blocklyDiv" // you can use whatever classes are appropriate for your app's CSS
             toolboxConfiguration={toolbox} // this must be a JSON toolbox definition
+            workspaceConfiguration={options}
             onWorkspaceChange={onChange}
             onInject={onInject}
         />

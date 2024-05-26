@@ -7,6 +7,9 @@ export default class MIPSComment extends MIPSCodeNode {
     }
 
     getHTML(): string {
-        return this.code?.split('\n').map( line => `<div class="line">${line}</div>` ).join("");
+        if( this.code )
+            return this.code?.split('\n').map( line => `<div class="line">${line}</div>` ).join("");
+
+        return "";
     }
 }

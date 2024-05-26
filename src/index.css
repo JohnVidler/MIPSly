@@ -30,10 +30,6 @@ code {
   display: inline-block;
 }
 
-.p3 {
-  padding: 3px;
-}
-
 
 .code-render {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;

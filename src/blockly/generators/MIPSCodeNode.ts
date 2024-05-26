@@ -9,6 +9,7 @@ export function resetSpans() {
 
 export default class MIPSCodeNode {
     public span: number | undefined;
+    public code: string | undefined;
 
     constructor() {
         this.span = getSpanID()

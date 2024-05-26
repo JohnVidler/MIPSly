@@ -1,4 +1,4 @@
-import MIPSCodeNode, { getSpanID } from "./MIPSCodeNode";
+import MIPSCodeNode from "./MIPSCodeNode";
 
 export default class MIPSCodeBlock extends MIPSCodeNode {
     public children: MIPSCodeNode[];

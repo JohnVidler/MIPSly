@@ -51,7 +51,7 @@ export async function ic10encode( code, target ) {
     const compressed = arrayBufferToBase64(await compress(JSON.stringify(ic10context, replacer), 'gzip'));
 
     // Convert and compress for ic10emu :)
-    target( "https://ic10emu.dev/#" + compressed );
+    target( "https://ic10emu.dev/#" + compressed )
 }
 
 function arrayBufferToBase64( buffer ) {

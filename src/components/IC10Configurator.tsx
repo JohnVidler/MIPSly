@@ -1,6 +1,7 @@
 import { NetworkDevice } from "./NetworkDevice";
 
-export function IC10Configurator( props ) {
+//export function IC10Configurator( props ) {
+export function IC10Configurator() {
     /*const {d0, setd0} = useState();
     const {d1, setd1} = useState();
     const {d2, setd2} = useState();
