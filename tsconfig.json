@@ -8,8 +8,8 @@
 
     "allowJs": true,
     "noImplicitAny": false,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
+//    "allowSyntheticDefaultImports": true,
+//    "esModuleInterop": true,
 
     /* Bundler mode */
     "moduleResolution": "Node",
@@ -23,7 +23,7 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
