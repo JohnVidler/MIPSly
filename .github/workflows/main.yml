@@ -12,10 +12,20 @@ jobs:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
 
-      - name: Install and Build 🔧 # This example project is built using npm and outputs the result to the 'build' folder. Replace with the commands required to build your project, or remove this step entirely if your site is pre-built.
+      - name: Install 🔧
         run: |
           npm ci
-          sed 's/import Blockly from "blockly";/import * as Blockly from "blockly";/' node_modules/react-blockly/dist/useBlocklyWorkspace.js
+
+      - name: Find and Replace
+        uses: jacobtomlinson/gha-find-replace@v2
+        with:
+          find: "import Blockly from \"blockly\";"
+          replace: "import * as Blockly from \"blockly\";"
+          regex: false
+          include: 'node_modules/react-blockly/dist/useBlocklyWorkspace.js'
+      
+      - name: Install 🔧
+        run: |
           npm run dev-build
 
       - name: Deploy 🚀
