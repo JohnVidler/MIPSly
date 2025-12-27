@@ -2,13 +2,13 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/K3K8L32E3)
 
-Play with it live over at [https://johnvidler.co.uk/mips/](https://johnvidler.co.uk/mips/)
+Play with it live over at [https://johnvidler.github.io/MIPSly/](https://johnvidler.github.io/MIPSly/)
 
 ## Tooling
 
 The application uses many of the same tools that the Blockly team uses to develop Blockly itself. Following is a brief overview, and you can read more about them on our [developer site](https://developers.google.com/blockly/guides/contribute/get-started/development_tools).
 
-- Structure: The application is built as an npm package. You can use npm to manage the dependencies of the application.
+- Structure: The application is built as an yarn/npm package. You can use yarn/npm to manage the dependencies of the application.
 - Modules: ES6 modules to handle imports to/exports from other files.
 - Building/bundling: Webpack to build the source code and bundle it into one file for serving.
 - Development server: webpack-dev-server to run locally while in development.
@@ -20,11 +20,8 @@ You can disable, reconfigure, or replace any of these tools at any time, but the
 
 ## Structure
 
-- `package.json` contains basic information about the app. This is where the scripts to run, build, etc. are listed.
-- `package-lock.json` is used by npm to manage dependencies
-- `webpack.config.js` is the configuration for webpack. This handles bundling the application and running our development server.
 - `src/` contains the rest of the source code.
-- `dist/` contains the packaged output (that you could host on a server, for example). This is ignored by git and will only appear after you run `npm run build` or `npm run start`.
+- `dist/` contains the packaged output (that you could host on a server, for example). This is ignored by git and will only appear after you run `yarn build` or `yarn start`.
 
 ### Source Code
 
@@ -37,6 +34,6 @@ You can disable, reconfigure, or replace any of these tools at any time, but the
 
 ## Serving
 
-To run your app locally, run `npm run start` to run the development server. This mode generates source maps and ingests the source maps created by Blockly, so that you can debug using unminified code.
+To run your app locally, run `yarn start` to run the development server. This mode generates source maps and ingests the source maps created by Blockly, so that you can debug using unminified code.
 
-To deploy your app so that others can use it, run `npm run build` to run a production build. This will bundle your code and minify it to reduce its size. You can then host the contents of the `dist` directory on a web server of your choosing. If you're just getting started, try using [GitHub Pages](https://pages.github.com/).
+To deploy your app so that others can use it, run `yarn build` to run a production build. This will bundle your code and minify it to reduce its size. You can then host the contents of the `dist` directory on a web server of your choosing. If you're just getting started, try using [GitHub Pages](https://pages.github.com/).
