@@ -91,6 +91,10 @@ function resolveAlias( alias, depth = 0 ) {
     return alias;
 }
 
+function makeValidLabel( label ) {
+    return label.replace( /[^a-zA-Z0-9_]/g, '_' );
+}
+
 export const stationeerMIPSGenerator = new Blockly.Generator('stationeersMIPS');
 
 stationeerMIPSGenerator.log = function( line ) {
@@ -151,7 +155,7 @@ stationeerMIPSGenerator.scrub_ = function( block, code, thisOnly ) {
 };
 
 stationeerMIPSGenerator.forBlock['define'] = function( block, generator ) {
-    const name = block.getFieldValue( "NAME" ) || "??";
+    const name = makeValidLabel(block.getFieldValue( "NAME" )) || "??";
     const port = block.getFieldValue( "PORT" ) || "??";
 
     if( pinRegister( port ) )

@@ -9,10 +9,12 @@ import {blocks} from './blocks/stationeers-mips';
 import {stationeerMIPSGenerator} from './generators/stationeers-mips';
 import {save, load} from './serialization';
 import {toolbox} from './toolbox';
+import {registerTriangularRenderer} from './customRenderer';
 import './index.css';
 
 // Register the blocks and generator with Blockly
 Blockly.common.defineBlocks(blocks);
+registerTriangularRenderer();
 //Object.assign(stationeerMIPSGenerator.forBlock, forBlock);
 //Object.assign(stationeerMIPSGenerator.define, )
 
@@ -21,7 +23,7 @@ const codeDiv = document.getElementById('generatedCode').firstChild;
 const outputDiv = document.getElementById('output').firstChild;
 const blocklyDiv = document.getElementById('blocklyDiv');
 //const ws = Blockly.inject(blocklyDiv, {toolbox, renderer: 'Zelos'});
-const ws = Blockly.inject(blocklyDiv, {toolbox});
+const ws = Blockly.inject(blocklyDiv, {toolbox, renderer: 'triangular'});
 
 // This function resets the code and output divs, shows the
 // generated code from the workspace, and evals the code.

@@ -12,7 +12,7 @@
   "keywords": [
     "blockly"
   ],
-  "author": "",
+  "author": "John Vidler",
   "license": "Apache-2.0",
   "devDependencies": {
     "css-loader": "^6.7.1",
